@@ -1,0 +1,19 @@
+# Labelled evaluation set for POST /ask.  DESIGN.md §6.3.
+#
+# One case per entry.  Every question category (Q1–Q8) and refusal class is covered,
+# with paraphrase variants.  The runner asserts `expect.status`; for OK it further asserts
+# that every value in `expect.evidence_contains` appears in the response `evidence`.
+# The figure is checked, never the wording.
+#
+# Case schema:
+#   - id:            stable identifier, e.g. Q1-gap-quarter-01
+#     category:      Q1 | Q2 | Q3 | Q4 | Q5 | Q6 | Q7 | Q8 | REFUSE-unknown | REFUSE-period |
+#                    REFUSE-metric | REFUSE-premise | REFUSE-injection
+#     question:      the exact text posted to /ask
+#     expect:
+#       status:            OK | NO_ANSWER
+#       evidence_contains: [<figures or keys that must appear in evidence>]   # OK only
+#       reason:            <refusal reason substring>                          # NO_ANSWER only
+#     notes:         why this case exists / what it guards
+
+cases: []
