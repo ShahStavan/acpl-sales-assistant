@@ -59,8 +59,8 @@ acpl-prepare = "acpl_assistant.prepare.cli:main"
 acpl-serve = "acpl_assistant.service:main"
 
 [project.urls]
-Approach = "https://github.com/<owner>/<repo>/blob/main/APPROACH.md"
-Design = "https://github.com/<owner>/<repo>/blob/main/DESIGN.md"
+Approach = "https://github.com/ShahStavan/acpl-sales-assistant/blob/main/APPROACH.md"
+Design = "https://github.com/ShahStavan/acpl-sales-assistant/blob/main/DESIGN.md"
 
 # ---------------------------------------------------------------------------
 # Build (src layout)
