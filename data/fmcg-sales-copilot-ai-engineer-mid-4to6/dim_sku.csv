@@ -1,0 +1,121 @@
+sku_code,sku_name,brand,category,pack_size,mrp_inr
+BS-0101,GlucoJoy 50g,GlucoJoy,Biscuits,50g,34
+BS-0102,GlucoJoy 100g,GlucoJoy,Biscuits,100g,33
+BS-0103,GlucoJoy 200g,GlucoJoy,Biscuits,200g,52
+BS-0104,GlucoJoy 400g,GlucoJoy,Biscuits,400g,36
+BS-0105,GlucoJoy Family 800g,GlucoJoy,Biscuits,Family 800g,128
+BS-0106,GlucoJoy Mini 30g,GlucoJoy,Biscuits,Mini 30g,101
+BS-0107,GlucoJoy Twin 2x100g,GlucoJoy,Biscuits,Twin 2x100g,103
+BS-0108,GlucoJoy Party 1kg,GlucoJoy,Biscuits,Party 1kg,128
+BS-0201,CremeDelight 50g,CremeDelight,Biscuits,50g,14
+BS-0202,CremeDelight 100g,CremeDelight,Biscuits,100g,53
+BS-0203,CremeDelight 200g,CremeDelight,Biscuits,200g,72
+BS-0204,CremeDelight 400g,CremeDelight,Biscuits,400g,35
+BS-0205,CremeDelight Family 800g,CremeDelight,Biscuits,Family 800g,72
+BS-0206,CremeDelight Mini 30g,CremeDelight,Biscuits,Mini 30g,111
+BS-0207,CremeDelight Twin 2x100g,CremeDelight,Biscuits,Twin 2x100g,136
+BS-0208,CremeDelight Party 1kg,CremeDelight,Biscuits,Party 1kg,200
+BS-0301,Marigold Marie 50g,Marigold Marie,Biscuits,50g,25
+BS-0302,Marigold Marie 100g,Marigold Marie,Biscuits,100g,46
+BS-0303,Marigold Marie 200g,Marigold Marie,Biscuits,200g,70
+BS-0304,Marigold Marie 400g,Marigold Marie,Biscuits,400g,79
+BS-0305,Marigold Marie Family 800g,Marigold Marie,Biscuits,Family 800g,81
+BS-0306,Marigold Marie Mini 30g,Marigold Marie,Biscuits,Mini 30g,156
+BS-0307,Marigold Marie Twin 2x100g,Marigold Marie,Biscuits,Twin 2x100g,150
+BS-0308,Marigold Marie Party 1kg,Marigold Marie,Biscuits,Party 1kg,177
+SN-0101,Crunchos 25g,Crunchos,Snacks,25g,15
+SN-0102,Crunchos 50g,Crunchos,Snacks,50g,60
+SN-0103,Crunchos 90g,Crunchos,Snacks,90g,31
+SN-0104,Crunchos 150g,Crunchos,Snacks,150g,77
+SN-0105,Crunchos Sharing 250g,Crunchos,Snacks,Sharing 250g,37
+SN-0106,Crunchos Party 400g,Crunchos,Snacks,Party 400g,120
+SN-0107,Crunchos Mini 15g,Crunchos,Snacks,Mini 15g,168
+SN-0108,Crunchos Combo 3x50g,Crunchos,Snacks,Combo 3x50g,61
+SN-0201,Namkeen Nation 25g,Namkeen Nation,Snacks,25g,17
+SN-0202,Namkeen Nation 50g,Namkeen Nation,Snacks,50g,43
+SN-0203,Namkeen Nation 90g,Namkeen Nation,Snacks,90g,34
+SN-0204,Namkeen Nation 150g,Namkeen Nation,Snacks,150g,92
+SN-0205,Namkeen Nation Sharing 250g,Namkeen Nation,Snacks,Sharing 250g,69
+SN-0206,Namkeen Nation Party 400g,Namkeen Nation,Snacks,Party 400g,107
+SN-0207,Namkeen Nation Mini 15g,Namkeen Nation,Snacks,Mini 15g,137
+SN-0208,Namkeen Nation Combo 3x50g,Namkeen Nation,Snacks,Combo 3x50g,127
+SN-0301,PopKing 25g,PopKing,Snacks,25g,27
+SN-0302,PopKing 50g,PopKing,Snacks,50g,42
+SN-0303,PopKing 90g,PopKing,Snacks,90g,67
+SN-0304,PopKing 150g,PopKing,Snacks,150g,83
+SN-0305,PopKing Sharing 250g,PopKing,Snacks,Sharing 250g,53
+SN-0306,PopKing Party 400g,PopKing,Snacks,Party 400g,131
+SN-0307,PopKing Mini 15g,PopKing,Snacks,Mini 15g,140
+SN-0308,PopKing Combo 3x50g,PopKing,Snacks,Combo 3x50g,108
+BV-0101,Aqualite 200ml,Aqualite,Beverages,200ml,27
+BV-0102,Aqualite 300ml,Aqualite,Beverages,300ml,49
+BV-0103,Aqualite 500ml,Aqualite,Beverages,500ml,37
+BV-0104,Aqualite 1L,Aqualite,Beverages,1L,100
+BV-0105,Aqualite 1.5L,Aqualite,Beverages,1.5L,115
+BV-0106,Aqualite 2L,Aqualite,Beverages,2L,123
+BV-0107,Aqualite Tetra 250ml,Aqualite,Beverages,Tetra 250ml,171
+BV-0108,Aqualite Multipack 6x300ml,Aqualite,Beverages,Multipack 6x300ml,103
+BV-0201,Zing Cola 200ml,Zing Cola,Beverages,200ml,17
+BV-0202,Zing Cola 300ml,Zing Cola,Beverages,300ml,40
+BV-0203,Zing Cola 500ml,Zing Cola,Beverages,500ml,58
+BV-0204,Zing Cola 1L,Zing Cola,Beverages,1L,63
+BV-0205,Zing Cola 1.5L,Zing Cola,Beverages,1.5L,67
+BV-0206,Zing Cola 2L,Zing Cola,Beverages,2L,132
+BV-0207,Zing Cola Tetra 250ml,Zing Cola,Beverages,Tetra 250ml,70
+BV-0208,Zing Cola Multipack 6x300ml,Zing Cola,Beverages,Multipack 6x300ml,55
+BV-0301,Chai Mitra 200ml,Chai Mitra,Beverages,200ml,34
+BV-0302,Chai Mitra 300ml,Chai Mitra,Beverages,300ml,44
+BV-0303,Chai Mitra 500ml,Chai Mitra,Beverages,500ml,65
+BV-0304,Chai Mitra 1L,Chai Mitra,Beverages,1L,110
+BV-0305,Chai Mitra 1.5L,Chai Mitra,Beverages,1.5L,91
+BV-0306,Chai Mitra 2L,Chai Mitra,Beverages,2L,95
+BV-0307,Chai Mitra Tetra 250ml,Chai Mitra,Beverages,Tetra 250ml,121
+BV-0308,Chai Mitra Multipack 6x300ml,Chai Mitra,Beverages,Multipack 6x300ml,75
+HC-0101,SparkClean 250ml,SparkClean,Home Care,250ml,35
+HC-0102,SparkClean 500ml,SparkClean,Home Care,500ml,54
+HC-0103,SparkClean 1L,SparkClean,Home Care,1L,69
+HC-0104,SparkClean 2L,SparkClean,Home Care,2L,108
+HC-0105,SparkClean Refill 800ml,SparkClean,Home Care,Refill 800ml,61
+HC-0106,SparkClean Bar 150g,SparkClean,Home Care,Bar 150g,101
+HC-0107,SparkClean Sachet 20ml,SparkClean,Home Care,Sachet 20ml,116
+HC-0108,SparkClean Combo 1L+250ml,SparkClean,Home Care,Combo 1L+250ml,190
+HC-0201,FreshFloor 250ml,FreshFloor,Home Care,250ml,34
+HC-0202,FreshFloor 500ml,FreshFloor,Home Care,500ml,58
+HC-0203,FreshFloor 1L,FreshFloor,Home Care,1L,44
+HC-0204,FreshFloor 2L,FreshFloor,Home Care,2L,30
+HC-0205,FreshFloor Refill 800ml,FreshFloor,Home Care,Refill 800ml,111
+HC-0206,FreshFloor Bar 150g,FreshFloor,Home Care,Bar 150g,140
+HC-0207,FreshFloor Sachet 20ml,FreshFloor,Home Care,Sachet 20ml,54
+HC-0208,FreshFloor Combo 1L+250ml,FreshFloor,Home Care,Combo 1L+250ml,83
+HC-0301,DishBright 250ml,DishBright,Home Care,250ml,31
+HC-0302,DishBright 500ml,DishBright,Home Care,500ml,41
+HC-0303,DishBright 1L,DishBright,Home Care,1L,27
+HC-0304,DishBright 2L,DishBright,Home Care,2L,33
+HC-0305,DishBright Refill 800ml,DishBright,Home Care,Refill 800ml,48
+HC-0306,DishBright Bar 150g,DishBright,Home Care,Bar 150g,143
+HC-0307,DishBright Sachet 20ml,DishBright,Home Care,Sachet 20ml,47
+HC-0308,DishBright Combo 1L+250ml,DishBright,Home Care,Combo 1L+250ml,104
+PC-0101,Silkessa 50ml,Silkessa,Personal Care,50ml,19
+PC-0102,Silkessa 100ml,Silkessa,Personal Care,100ml,52
+PC-0103,Silkessa 200ml,Silkessa,Personal Care,200ml,41
+PC-0104,Silkessa 400ml,Silkessa,Personal Care,400ml,31
+PC-0105,Silkessa Sachet 8ml,Silkessa,Personal Care,Sachet 8ml,52
+PC-0106,Silkessa Bar 75g,Silkessa,Personal Care,Bar 75g,124
+PC-0107,Silkessa Twin 2x100ml,Silkessa,Personal Care,Twin 2x100ml,62
+PC-0108,Silkessa Family 750ml,Silkessa,Personal Care,Family 750ml,206
+PC-0201,MintGuard 50ml,MintGuard,Personal Care,50ml,24
+PC-0202,MintGuard 100ml,MintGuard,Personal Care,100ml,48
+PC-0203,MintGuard 200ml,MintGuard,Personal Care,200ml,39
+PC-0204,MintGuard 400ml,MintGuard,Personal Care,400ml,93
+PC-0205,MintGuard Sachet 8ml,MintGuard,Personal Care,Sachet 8ml,62
+PC-0206,MintGuard Bar 75g,MintGuard,Personal Care,Bar 75g,114
+PC-0207,MintGuard Twin 2x100ml,MintGuard,Personal Care,Twin 2x100ml,167
+PC-0208,MintGuard Family 750ml,MintGuard,Personal Care,Family 750ml,110
+PC-0301,Aloe Vera Glow 50ml,Aloe Vera Glow,Personal Care,50ml,13
+PC-0302,Aloe Vera Glow 100ml,Aloe Vera Glow,Personal Care,100ml,42
+PC-0303,Aloe Vera Glow 200ml,Aloe Vera Glow,Personal Care,200ml,75
+PC-0304,Aloe Vera Glow 400ml,Aloe Vera Glow,Personal Care,400ml,56
+PC-0305,Aloe Vera Glow Sachet 8ml,Aloe Vera Glow,Personal Care,Sachet 8ml,85
+PC-0306,Aloe Vera Glow Bar 75g,Aloe Vera Glow,Personal Care,Bar 75g,52
+PC-0307,Aloe Vera Glow Twin 2x100ml,Aloe Vera Glow,Personal Care,Twin 2x100ml,173
+PC-0308,Aloe Vera Glow Family 750ml,Aloe Vera Glow,Personal Care,Family 750ml,102

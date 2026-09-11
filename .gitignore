@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# OpenCode & IDE
+.opencode/
+.vscode/
+.idea/
+
+# Environment / Secrets (if stored in .env)
+.env
+.env.*
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Tooling caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Generated at prepare time (rebuilt by `python prepare.py`; prep_report.json is committed)
+*.duckdb
+*.duckdb.wal
+
+# Keep the committed environment template
+!.env.example
+
+# Local-only material
+Cadra_Candidate_Onboarding_Guide_Hiring.pdf

@@ -1,0 +1,13 @@
+territory_code,territory_name,region,state
+T-N1,Delhi NCR,North,Delhi
+T-N2,Jaipur,North,Rajasthan
+T-N3,Lucknow,North,Uttar Pradesh
+T-S1,Bengaluru,South,Karnataka
+T-S2,Chennai,South,Tamil Nadu
+T-S3,Hyderabad,South,Telangana
+T-E1,Kolkata,East,West Bengal
+T-E2,Patna,East,Bihar
+T-E3,Guwahati,East,Assam
+T-W1,Mumbai,West,Maharashtra
+T-W2,Pune,West,Maharashtra
+T-W3,Ahmedabad,West,Gujarat

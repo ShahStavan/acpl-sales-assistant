@@ -1,0 +1,41 @@
+distributor_id,distributor_name,territory_code,city
+D001,Delhi Sales Corp 1,T-N1,Delhi NCR
+D002,Delhi Agencies 2,T-N1,Delhi NCR
+D003,Delhi Trading Co 3,T-N1,Delhi NCR
+D004,Delhi Agencies 4,T-N1,Delhi NCR
+D005,Jaipur & Sons 1,T-N2,Jaipur
+D006,Jaipur Sales Corp 2,T-N2,Jaipur
+D007,Jaipur Agencies 3,T-N2,Jaipur
+D008,Jaipur Traders 4,T-N2,Jaipur
+D009,Lucknow Traders 1,T-N3,Lucknow
+D010,Lucknow Enterprises 2,T-N3,Lucknow
+D011,Lucknow Enterprises 3,T-N3,Lucknow
+D012,Lucknow Marketing 4,T-N3,Lucknow
+D013,Bengaluru Enterprises 1,T-S1,Bengaluru
+D014,Bengaluru Sales Corp 2,T-S1,Bengaluru
+D015,Bengaluru Agencies 3,T-S1,Bengaluru
+D016,Bengaluru Traders 4,T-S1,Bengaluru
+D017,Chennai Sales Corp 1,T-S2,Chennai
+D018,Chennai Marketing 2,T-S2,Chennai
+D019,Chennai Enterprises 3,T-S2,Chennai
+D020,Hyderabad Trading Co 1,T-S3,Hyderabad
+D021,Hyderabad Traders 2,T-S3,Hyderabad
+D022,Hyderabad Marketing 3,T-S3,Hyderabad
+D023,Kolkata Traders 1,T-E1,Kolkata
+D024,Kolkata Marketing 2,T-E1,Kolkata
+D025,Kolkata & Sons 3,T-E1,Kolkata
+D026,Patna & Sons 1,T-E2,Patna
+D027,Patna & Sons 2,T-E2,Patna
+D028,Patna & Sons 3,T-E2,Patna
+D029,Guwahati Marketing 1,T-E3,Guwahati
+D030,Guwahati Enterprises 2,T-E3,Guwahati
+D031,Guwahati & Sons 3,T-E3,Guwahati
+D032,Mumbai & Sons 1,T-W1,Mumbai
+D033,Mumbai Distributors 2,T-W1,Mumbai
+D034,Mumbai Distributors 3,T-W1,Mumbai
+D035,Pune Sales Corp 1,T-W2,Pune
+D036,Pune Distributors 2,T-W2,Pune
+D037,Pune Trading Co 3,T-W2,Pune
+D038,Ahmedabad Agencies 1,T-W3,Ahmedabad
+D039,Ahmedabad Marketing 2,T-W3,Ahmedabad
+D040,Ahmedabad Marketing 3,T-W3,Ahmedabad

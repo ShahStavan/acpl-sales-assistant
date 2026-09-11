@@ -6,7 +6,7 @@
       "name": "Cadra",
       "options": {
         "baseURL": "https://proxy.cadra.info/v1",
-        "apiKey": "PASTE_CADRA_TOKEN_HERE"
+        "apiKey": "{env:CADRA_TOKEN}"
       },
       "models": {
         "cadra": { "name": "Cadra", "tools": true }

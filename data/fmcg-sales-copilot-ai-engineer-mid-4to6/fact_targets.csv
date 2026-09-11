@@ -1,0 +1,721 @@
+month,brand_name,region_name,target_value_inr
+2025-07,GlucoJoy,North,2864000
+2025-07,GlucoJoy,South,2562000
+2025-07,GlucoJoy,East,2759000
+2025-07,GlucoJoy,West,1814000
+2025-07,CremeDelight,North,2651000
+2025-07,CremeDelight,South,2392000
+2025-07,CremeDelight,East,2654000
+2025-07,CremeDelight,West,1710000
+2025-07,Marigold Marie,North,2416000
+2025-07,Marigold Marie,South,2242000
+2025-07,Marigold Marie,East,2500000
+2025-07,Marigold Marie,West,1812000
+2025-07,Crunchos,North,1552000
+2025-07,Crunchos,South,1595000
+2025-07,Crunchos,East,1729000
+2025-07,Crunchos,West,1109000
+2025-07,Namkeen Nation,North,3316000
+2025-07,Namkeen Nation,South,2807000
+2025-07,Namkeen Nation,East,3595000
+2025-07,Namkeen Nation,West,2422000
+2025-07,PopKing,North,1406000
+2025-07,PopKing,South,1421000
+2025-07,PopKing,East,1656000
+2025-07,PopKing,West,1023000
+2025-07,Aqualite,North,2606000
+2025-07,Aqualite,South,2355000
+2025-07,Aqualite,East,2523000
+2025-07,Aqualite,West,1770000
+2025-07,Zing Cola,North,1435000
+2025-07,Zing Cola,South,1443000
+2025-07,Zing Cola,East,1509000
+2025-07,Zing Cola,West,1033000
+2025-07,Chai Mitra,North,2021000
+2025-07,Chai Mitra,South,2049000
+2025-07,Chai Mitra,East,2251000
+2025-07,Chai Mitra,West,1391000
+2025-07,SparkClean,North,3586000
+2025-07,SparkClean,South,2967000
+2025-07,SparkClean,East,3517000
+2025-07,SparkClean,West,2329000
+2025-07,FreshFloor,North,2596000
+2025-07,FreshFloor,South,2144000
+2025-07,FreshFloor,East,2403000
+2025-07,FreshFloor,West,1689000
+2025-07,DishBright,North,1789000
+2025-07,DishBright,South,1800000
+2025-07,DishBright,East,1992000
+2025-07,DishBright,West,1225000
+2025-07,Silkessa,North,1702000
+2025-07,Silkessa,South,1416000
+2025-07,Silkessa,East,1736000
+2025-07,Silkessa,West,1197000
+2025-07,MintGuard,North,1635000
+2025-07,MintGuard,South,1294000
+2025-07,MintGuard,East,1579000
+2025-07,MintGuard,West,978000
+2025-07,Aloe Vera Glow,North,2460000
+2025-07,Aloe Vera Glow,South,2300000
+2025-07,Aloe Vera Glow,East,2522000
+2025-07,Aloe Vera Glow,West,1547000
+2025-08,GlucoJoy,North,2489000
+2025-08,GlucoJoy,South,2098000
+2025-08,GlucoJoy,East,2507000
+2025-08,GlucoJoy,West,1544000
+2025-08,CremeDelight,North,2168000
+2025-08,CremeDelight,South,1855000
+2025-08,CremeDelight,East,2074000
+2025-08,CremeDelight,West,1394000
+2025-08,Marigold Marie,North,2227000
+2025-08,Marigold Marie,South,1868000
+2025-08,Marigold Marie,East,2145000
+2025-08,Marigold Marie,West,1374000
+2025-08,Crunchos,North,1375000
+2025-08,Crunchos,South,1279000
+2025-08,Crunchos,East,1360000
+2025-08,Crunchos,West,864000
+2025-08,Namkeen Nation,North,2823000
+2025-08,Namkeen Nation,South,2410000
+2025-08,Namkeen Nation,East,2970000
+2025-08,Namkeen Nation,West,1945000
+2025-08,PopKing,North,1303000
+2025-08,PopKing,South,1148000
+2025-08,PopKing,East,1336000
+2025-08,PopKing,West,836000
+2025-08,Aqualite,North,2300000
+2025-08,Aqualite,South,1826000
+2025-08,Aqualite,East,2134000
+2025-08,Aqualite,West,1383000
+2025-08,Zing Cola,North,1421000
+2025-08,Zing Cola,South,1217000
+2025-08,Zing Cola,East,1397000
+2025-08,Zing Cola,West,954000
+2025-08,Chai Mitra,North,1691000
+2025-08,Chai Mitra,South,1635000
+2025-08,Chai Mitra,East,1701000
+2025-08,Chai Mitra,West,1143000
+2025-08,SparkClean,North,2766000
+2025-08,SparkClean,South,2517000
+2025-08,SparkClean,East,3078000
+2025-08,SparkClean,West,1969000
+2025-08,FreshFloor,North,2156000
+2025-08,FreshFloor,South,1767000
+2025-08,FreshFloor,East,2169000
+2025-08,FreshFloor,West,1343000
+2025-08,DishBright,North,1641000
+2025-08,DishBright,South,1429000
+2025-08,DishBright,East,1523000
+2025-08,DishBright,West,1100000
+2025-08,Silkessa,North,1500000
+2025-08,Silkessa,South,1304000
+2025-08,Silkessa,East,1399000
+2025-08,Silkessa,West,1005000
+2025-08,MintGuard,North,1279000
+2025-08,MintGuard,South,1266000
+2025-08,MintGuard,East,1392000
+2025-08,MintGuard,West,923000
+2025-08,Aloe Vera Glow,North,1861000
+2025-08,Aloe Vera Glow,South,1794000
+2025-08,Aloe Vera Glow,East,1960000
+2025-08,Aloe Vera Glow,West,1248000
+2025-09,GlucoJoy,North,2984000
+2025-09,GlucoJoy,South,2705000
+2025-09,GlucoJoy,East,2797000
+2025-09,GlucoJoy,West,2090000
+2025-09,CremeDelight,North,2560000
+2025-09,CremeDelight,South,2544000
+2025-09,CremeDelight,East,2735000
+2025-09,CremeDelight,West,1637000
+2025-09,Marigold Marie,North,2504000
+2025-09,Marigold Marie,South,2280000
+2025-09,Marigold Marie,East,2797000
+2025-09,Marigold Marie,West,1847000
+2025-09,Crunchos,North,1784000
+2025-09,Crunchos,South,1756000
+2025-09,Crunchos,East,1884000
+2025-09,Crunchos,West,1170000
+2025-09,Namkeen Nation,North,3407000
+2025-09,Namkeen Nation,South,3153000
+2025-09,Namkeen Nation,East,3590000
+2025-09,Namkeen Nation,West,2439000
+2025-09,PopKing,North,1448000
+2025-09,PopKing,South,1511000
+2025-09,PopKing,East,1554000
+2025-09,PopKing,West,1125000
+2025-09,Aqualite,North,2897000
+2025-09,Aqualite,South,2556000
+2025-09,Aqualite,East,2837000
+2025-09,Aqualite,West,1777000
+2025-09,Zing Cola,North,1790000
+2025-09,Zing Cola,South,1381000
+2025-09,Zing Cola,East,1761000
+2025-09,Zing Cola,West,1170000
+2025-09,Chai Mitra,North,2209000
+2025-09,Chai Mitra,South,1971000
+2025-09,Chai Mitra,East,2473000
+2025-09,Chai Mitra,West,1487000
+2025-09,SparkClean,North,3808000
+2025-09,SparkClean,South,3484000
+2025-09,SparkClean,East,4045000
+2025-09,SparkClean,West,2583000
+2025-09,FreshFloor,North,2456000
+2025-09,FreshFloor,South,2205000
+2025-09,FreshFloor,East,2883000
+2025-09,FreshFloor,West,1765000
+2025-09,DishBright,North,2041000
+2025-09,DishBright,South,1863000
+2025-09,DishBright,East,2144000
+2025-09,DishBright,West,1397000
+2025-09,Silkessa,North,1888000
+2025-09,Silkessa,South,1638000
+2025-09,Silkessa,East,1849000
+2025-09,Silkessa,West,1294000
+2025-09,MintGuard,North,1773000
+2025-09,MintGuard,South,1561000
+2025-09,MintGuard,East,1656000
+2025-09,MintGuard,West,1062000
+2025-09,Aloe Vera Glow,North,2553000
+2025-09,Aloe Vera Glow,South,2370000
+2025-09,Aloe Vera Glow,East,2746000
+2025-09,Aloe Vera Glow,West,1736000
+2025-10,GlucoJoy,North,2652000
+2025-10,GlucoJoy,South,2385000
+2025-10,GlucoJoy,East,2616000
+2025-10,GlucoJoy,West,1636000
+2025-10,CremeDelight,North,2383000
+2025-10,CremeDelight,South,1994000
+2025-10,CremeDelight,East,2539000
+2025-10,CremeDelight,West,1542000
+2025-10,Marigold Marie,North,2406000
+2025-10,Marigold Marie,South,2220000
+2025-10,Marigold Marie,East,2496000
+2025-10,Marigold Marie,West,1545000
+2025-10,Crunchos,North,1513000
+2025-10,Crunchos,South,1499000
+2025-10,Crunchos,East,1632000
+2025-10,Crunchos,West,1095000
+2025-10,Namkeen Nation,North,3111000
+2025-10,Namkeen Nation,South,2801000
+2025-10,Namkeen Nation,East,3073000
+2025-10,Namkeen Nation,West,2158000
+2025-10,PopKing,North,1280000
+2025-10,PopKing,South,1260000
+2025-10,PopKing,East,1491000
+2025-10,PopKing,West,1017000
+2025-10,Aqualite,North,2715000
+2025-10,Aqualite,South,2170000
+2025-10,Aqualite,East,2658000
+2025-10,Aqualite,West,1694000
+2025-10,Zing Cola,North,1476000
+2025-10,Zing Cola,South,1356000
+2025-10,Zing Cola,East,1469000
+2025-10,Zing Cola,West,1013000
+2025-10,Chai Mitra,North,2015000
+2025-10,Chai Mitra,South,1914000
+2025-10,Chai Mitra,East,2069000
+2025-10,Chai Mitra,West,1406000
+2025-10,SparkClean,North,3042000
+2025-10,SparkClean,South,3536000
+2025-10,SparkClean,East,3259000
+2025-10,SparkClean,West,2287000
+2025-10,FreshFloor,North,2227000
+2025-10,FreshFloor,South,2562000
+2025-10,FreshFloor,East,2350000
+2025-10,FreshFloor,West,1614000
+2025-10,DishBright,North,1732000
+2025-10,DishBright,South,1899000
+2025-10,DishBright,East,1811000
+2025-10,DishBright,West,1161000
+2025-10,Silkessa,North,1671000
+2025-10,Silkessa,South,1390000
+2025-10,Silkessa,East,1708000
+2025-10,Silkessa,West,987000
+2025-10,MintGuard,North,1358000
+2025-10,MintGuard,South,1250000
+2025-10,MintGuard,East,1447000
+2025-10,MintGuard,West,1053000
+2025-10,Aloe Vera Glow,North,2034000
+2025-10,Aloe Vera Glow,South,2048000
+2025-10,Aloe Vera Glow,East,2552000
+2025-10,Aloe Vera Glow,West,1370000
+2025-11,GlucoJoy,North,2737000
+2025-11,GlucoJoy,South,2539000
+2025-11,GlucoJoy,East,2866000
+2025-11,GlucoJoy,West,1758000
+2025-11,CremeDelight,North,2427000
+2025-11,CremeDelight,South,2289000
+2025-11,CremeDelight,East,2528000
+2025-11,CremeDelight,West,1708000
+2025-11,Marigold Marie,North,2569000
+2025-11,Marigold Marie,South,2194000
+2025-11,Marigold Marie,East,2376000
+2025-11,Marigold Marie,West,1776000
+2025-11,Crunchos,North,1477000
+2025-11,Crunchos,South,1514000
+2025-11,Crunchos,East,1561000
+2025-11,Crunchos,West,1060000
+2025-11,Namkeen Nation,North,3066000
+2025-11,Namkeen Nation,South,2783000
+2025-11,Namkeen Nation,East,3471000
+2025-11,Namkeen Nation,West,2207000
+2025-11,PopKing,North,1371000
+2025-11,PopKing,South,1309000
+2025-11,PopKing,East,1502000
+2025-11,PopKing,West,896000
+2025-11,Aqualite,North,2513000
+2025-11,Aqualite,South,2371000
+2025-11,Aqualite,East,2775000
+2025-11,Aqualite,West,1776000
+2025-11,Zing Cola,North,1493000
+2025-11,Zing Cola,South,1479000
+2025-11,Zing Cola,East,1503000
+2025-11,Zing Cola,West,1000000
+2025-11,Chai Mitra,North,1931000
+2025-11,Chai Mitra,South,1827000
+2025-11,Chai Mitra,East,2020000
+2025-11,Chai Mitra,West,1408000
+2025-11,SparkClean,North,3295000
+2025-11,SparkClean,South,3209000
+2025-11,SparkClean,East,3252000
+2025-11,SparkClean,West,2462000
+2025-11,FreshFloor,North,2563000
+2025-11,FreshFloor,South,2082000
+2025-11,FreshFloor,East,2319000
+2025-11,FreshFloor,West,1499000
+2025-11,DishBright,North,1807000
+2025-11,DishBright,South,1620000
+2025-11,DishBright,East,2037000
+2025-11,DishBright,West,1279000
+2025-11,Silkessa,North,1702000
+2025-11,Silkessa,South,1593000
+2025-11,Silkessa,East,1743000
+2025-11,Silkessa,West,1154000
+2025-11,MintGuard,North,1385000
+2025-11,MintGuard,South,1352000
+2025-11,MintGuard,East,1701000
+2025-11,MintGuard,West,1047000
+2025-11,Aloe Vera Glow,North,2313000
+2025-11,Aloe Vera Glow,South,2005000
+2025-11,Aloe Vera Glow,East,2575000
+2025-11,Aloe Vera Glow,West,1414000
+2025-12,GlucoJoy,North,2960000
+2025-12,GlucoJoy,South,2702000
+2025-12,GlucoJoy,East,2880000
+2025-12,GlucoJoy,West,1843000
+2025-12,CremeDelight,North,2681000
+2025-12,CremeDelight,South,2534000
+2025-12,CremeDelight,East,2676000
+2025-12,CremeDelight,West,1728000
+2025-12,Marigold Marie,North,2738000
+2025-12,Marigold Marie,South,2270000
+2025-12,Marigold Marie,East,2735000
+2025-12,Marigold Marie,West,1726000
+2025-12,Crunchos,North,1782000
+2025-12,Crunchos,South,1631000
+2025-12,Crunchos,East,1738000
+2025-12,Crunchos,West,1098000
+2025-12,Namkeen Nation,North,3599000
+2025-12,Namkeen Nation,South,3286000
+2025-12,Namkeen Nation,East,3882000
+2025-12,Namkeen Nation,West,2359000
+2025-12,PopKing,North,1565000
+2025-12,PopKing,South,1527000
+2025-12,PopKing,East,1647000
+2025-12,PopKing,West,1110000
+2025-12,Aqualite,North,2721000
+2025-12,Aqualite,South,2512000
+2025-12,Aqualite,East,2888000
+2025-12,Aqualite,West,1746000
+2025-12,Zing Cola,North,1573000
+2025-12,Zing Cola,South,1523000
+2025-12,Zing Cola,East,1598000
+2025-12,Zing Cola,West,1086000
+2025-12,Chai Mitra,North,2391000
+2025-12,Chai Mitra,South,1917000
+2025-12,Chai Mitra,East,2270000
+2025-12,Chai Mitra,West,1492000
+2025-12,SparkClean,North,3828000
+2025-12,SparkClean,South,3429000
+2025-12,SparkClean,East,3947000
+2025-12,SparkClean,West,2275000
+2025-12,FreshFloor,North,2654000
+2025-12,FreshFloor,South,2497000
+2025-12,FreshFloor,East,2699000
+2025-12,FreshFloor,West,1831000
+2025-12,DishBright,North,1798000
+2025-12,DishBright,South,1894000
+2025-12,DishBright,East,1942000
+2025-12,DishBright,West,1370000
+2025-12,Silkessa,North,1707000
+2025-12,Silkessa,South,1733000
+2025-12,Silkessa,East,1879000
+2025-12,Silkessa,West,1196000
+2025-12,MintGuard,North,1660000
+2025-12,MintGuard,South,1562000
+2025-12,MintGuard,East,1730000
+2025-12,MintGuard,West,1118000
+2025-12,Aloe Vera Glow,North,2451000
+2025-12,Aloe Vera Glow,South,2078000
+2025-12,Aloe Vera Glow,East,2556000
+2025-12,Aloe Vera Glow,West,1618000
+2026-01,GlucoJoy,North,2181000
+2026-01,GlucoJoy,South,1997000
+2026-01,GlucoJoy,East,2141000
+2026-01,GlucoJoy,West,1482000
+2026-01,CremeDelight,North,1986000
+2026-01,CremeDelight,South,1760000
+2026-01,CremeDelight,East,2003000
+2026-01,CremeDelight,West,1379000
+2026-01,Marigold Marie,North,2114000
+2026-01,Marigold Marie,South,1899000
+2026-01,Marigold Marie,East,2249000
+2026-01,Marigold Marie,West,1285000
+2026-01,Crunchos,North,1373000
+2026-01,Crunchos,South,1215000
+2026-01,Crunchos,East,1366000
+2026-01,Crunchos,West,982000
+2026-01,Namkeen Nation,North,2460000
+2026-01,Namkeen Nation,South,2600000
+2026-01,Namkeen Nation,East,2840000
+2026-01,Namkeen Nation,West,1981000
+2026-01,PopKing,North,1105000
+2026-01,PopKing,South,1095000
+2026-01,PopKing,East,1268000
+2026-01,PopKing,West,878000
+2026-01,Aqualite,North,2074000
+2026-01,Aqualite,South,1799000
+2026-01,Aqualite,East,2126000
+2026-01,Aqualite,West,1427000
+2026-01,Zing Cola,North,1182000
+2026-01,Zing Cola,South,1097000
+2026-01,Zing Cola,East,1265000
+2026-01,Zing Cola,West,868000
+2026-01,Chai Mitra,North,1728000
+2026-01,Chai Mitra,South,1503000
+2026-01,Chai Mitra,East,1753000
+2026-01,Chai Mitra,West,1079000
+2026-01,SparkClean,North,2621000
+2026-01,SparkClean,South,2497000
+2026-01,SparkClean,East,3037000
+2026-01,SparkClean,West,1840000
+2026-01,FreshFloor,North,1989000
+2026-01,FreshFloor,South,1877000
+2026-01,FreshFloor,East,2031000
+2026-01,FreshFloor,West,1409000
+2026-01,DishBright,North,1409000
+2026-01,DishBright,South,1357000
+2026-01,DishBright,East,1480000
+2026-01,DishBright,West,1079000
+2026-01,Silkessa,North,1374000
+2026-01,Silkessa,South,1316000
+2026-01,Silkessa,East,1411000
+2026-01,Silkessa,West,884000
+2026-01,MintGuard,North,1162000
+2026-01,MintGuard,South,1042000
+2026-01,MintGuard,East,1275000
+2026-01,MintGuard,West,804000
+2026-01,Aloe Vera Glow,North,1806000
+2026-01,Aloe Vera Glow,South,1648000
+2026-01,Aloe Vera Glow,East,1864000
+2026-01,Aloe Vera Glow,West,1199000
+2026-02,GlucoJoy,North,2332000
+2026-02,GlucoJoy,South,2021000
+2026-02,GlucoJoy,East,2426000
+2026-02,GlucoJoy,West,1441000
+2026-02,CremeDelight,North,2097000
+2026-02,CremeDelight,South,1932000
+2026-02,CremeDelight,East,2181000
+2026-02,CremeDelight,West,1443000
+2026-02,Marigold Marie,North,1989000
+2026-02,Marigold Marie,South,1808000
+2026-02,Marigold Marie,East,1997000
+2026-02,Marigold Marie,West,1410000
+2026-02,Crunchos,North,1302000
+2026-02,Crunchos,South,1186000
+2026-02,Crunchos,East,1420000
+2026-02,Crunchos,West,948000
+2026-02,Namkeen Nation,North,2973000
+2026-02,Namkeen Nation,South,2356000
+2026-02,Namkeen Nation,East,2824000
+2026-02,Namkeen Nation,West,1790000
+2026-02,PopKing,North,1325000
+2026-02,PopKing,South,1066000
+2026-02,PopKing,East,1328000
+2026-02,PopKing,West,775000
+2026-02,Aqualite,North,1994000
+2026-02,Aqualite,South,1816000
+2026-02,Aqualite,East,2216000
+2026-02,Aqualite,West,1402000
+2026-02,Zing Cola,North,1243000
+2026-02,Zing Cola,South,1277000
+2026-02,Zing Cola,East,1268000
+2026-02,Zing Cola,West,880000
+2026-02,Chai Mitra,North,1694000
+2026-02,Chai Mitra,South,1720000
+2026-02,Chai Mitra,East,1824000
+2026-02,Chai Mitra,West,1125000
+2026-02,SparkClean,North,2948000
+2026-02,SparkClean,South,2718000
+2026-02,SparkClean,East,3030000
+2026-02,SparkClean,West,2012000
+2026-02,FreshFloor,North,1943000
+2026-02,FreshFloor,South,1761000
+2026-02,FreshFloor,East,2075000
+2026-02,FreshFloor,West,1449000
+2026-02,DishBright,North,1429000
+2026-02,DishBright,South,1329000
+2026-02,DishBright,East,1577000
+2026-02,DishBright,West,1027000
+2026-02,Silkessa,North,1426000
+2026-02,Silkessa,South,1188000
+2026-02,Silkessa,East,1411000
+2026-02,Silkessa,West,981000
+2026-02,MintGuard,North,1273000
+2026-02,MintGuard,South,1095000
+2026-02,MintGuard,East,1409000
+2026-02,MintGuard,West,921000
+2026-02,Aloe Vera Glow,North,2132000
+2026-02,Aloe Vera Glow,South,1801000
+2026-02,Aloe Vera Glow,East,1996000
+2026-02,Aloe Vera Glow,West,1285000
+2026-03,GlucoJoy,North,2699000
+2026-03,GlucoJoy,South,2863000
+2026-03,GlucoJoy,East,3139000
+2026-03,GlucoJoy,West,2046000
+2026-03,CremeDelight,North,2838000
+2026-03,CremeDelight,South,2532000
+2026-03,CremeDelight,East,2566000
+2026-03,CremeDelight,West,1700000
+2026-03,Marigold Marie,North,2811000
+2026-03,Marigold Marie,South,2428000
+2026-03,Marigold Marie,East,2870000
+2026-03,Marigold Marie,West,1642000
+2026-03,Crunchos,North,1719000
+2026-03,Crunchos,South,1554000
+2026-03,Crunchos,East,1801000
+2026-03,Crunchos,West,1164000
+2026-03,Namkeen Nation,North,3618000
+2026-03,Namkeen Nation,South,3407000
+2026-03,Namkeen Nation,East,3749000
+2026-03,Namkeen Nation,West,2438000
+2026-03,PopKing,North,1577000
+2026-03,PopKing,South,1409000
+2026-03,PopKing,East,1707000
+2026-03,PopKing,West,1095000
+2026-03,Aqualite,North,2637000
+2026-03,Aqualite,South,2549000
+2026-03,Aqualite,East,2667000
+2026-03,Aqualite,West,1818000
+2026-03,Zing Cola,North,1620000
+2026-03,Zing Cola,South,1561000
+2026-03,Zing Cola,East,1656000
+2026-03,Zing Cola,West,1047000
+2026-03,Chai Mitra,North,2178000
+2026-03,Chai Mitra,South,2165000
+2026-03,Chai Mitra,East,2259000
+2026-03,Chai Mitra,West,1418000
+2026-03,SparkClean,North,3973000
+2026-03,SparkClean,South,3407000
+2026-03,SparkClean,East,3647000
+2026-03,SparkClean,West,2425000
+2026-03,FreshFloor,North,2445000
+2026-03,FreshFloor,South,2220000
+2026-03,FreshFloor,East,2720000
+2026-03,FreshFloor,West,1913000
+2026-03,DishBright,North,2044000
+2026-03,DishBright,South,1947000
+2026-03,DishBright,East,2001000
+2026-03,DishBright,West,1260000
+2026-03,Silkessa,North,1956000
+2026-03,Silkessa,South,1685000
+2026-03,Silkessa,East,1867000
+2026-03,Silkessa,West,1310000
+2026-03,MintGuard,North,1572000
+2026-03,MintGuard,South,1400000
+2026-03,MintGuard,East,1689000
+2026-03,MintGuard,West,1045000
+2026-03,Aloe Vera Glow,North,2627000
+2026-03,Aloe Vera Glow,South,2318000
+2026-03,Aloe Vera Glow,East,2518000
+2026-03,Aloe Vera Glow,West,1710000
+2026-04,GlucoJoy,North,2165000
+2026-04,GlucoJoy,South,1884000
+2026-04,GlucoJoy,East,2088000
+2026-04,GlucoJoy,West,1561000
+2026-04,CremeDelight,North,2035000
+2026-04,CremeDelight,South,1873000
+2026-04,CremeDelight,East,2243000
+2026-04,CremeDelight,West,1312000
+2026-04,Marigold Marie,North,2089000
+2026-04,Marigold Marie,South,1797000
+2026-04,Marigold Marie,East,2004000
+2026-04,Marigold Marie,West,1319000
+2026-04,Crunchos,North,1398000
+2026-04,Crunchos,South,1276000
+2026-04,Crunchos,East,1365000
+2026-04,Crunchos,West,867000
+2026-04,Namkeen Nation,North,2643000
+2026-04,Namkeen Nation,South,2577000
+2026-04,Namkeen Nation,East,2628000
+2026-04,Namkeen Nation,West,1930000
+2026-04,PopKing,North,1254000
+2026-04,PopKing,South,1085000
+2026-04,PopKing,East,1279000
+2026-04,PopKing,West,751000
+2026-04,Aqualite,North,2039000
+2026-04,Aqualite,South,1821000
+2026-04,Aqualite,East,2157000
+2026-04,Aqualite,West,1553000
+2026-04,Zing Cola,North,1167000
+2026-04,Zing Cola,South,1090000
+2026-04,Zing Cola,East,1354000
+2026-04,Zing Cola,West,868000
+2026-04,Chai Mitra,North,1691000
+2026-04,Chai Mitra,South,1662000
+2026-04,Chai Mitra,East,1864000
+2026-04,Chai Mitra,West,1221000
+2026-04,SparkClean,North,2687000
+2026-04,SparkClean,South,2697000
+2026-04,SparkClean,East,3116000
+2026-04,SparkClean,West,2013000
+2026-04,FreshFloor,North,2014000
+2026-04,FreshFloor,South,1837000
+2026-04,FreshFloor,East,2201000
+2026-04,FreshFloor,West,1422000
+2026-04,DishBright,North,1524000
+2026-04,DishBright,South,1359000
+2026-04,DishBright,East,1667000
+2026-04,DishBright,West,967000
+2026-04,Silkessa,North,1357000
+2026-04,Silkessa,South,1176000
+2026-04,Silkessa,East,1468000
+2026-04,Silkessa,West,876000
+2026-04,MintGuard,North,1322000
+2026-04,MintGuard,South,1095000
+2026-04,MintGuard,East,1285000
+2026-04,MintGuard,West,899000
+2026-04,Aloe Vera Glow,North,1878000
+2026-04,Aloe Vera Glow,South,1732000
+2026-04,Aloe Vera Glow,East,1974000
+2026-04,Aloe Vera Glow,West,1319000
+2026-05,GlucoJoy,North,2348000
+2026-05,GlucoJoy,South,2195000
+2026-05,GlucoJoy,East,2290000
+2026-05,GlucoJoy,West,1515000
+2026-05,CremeDelight,North,2248000
+2026-05,CremeDelight,South,1772000
+2026-05,CremeDelight,East,2115000
+2026-05,CremeDelight,West,1412000
+2026-05,Marigold Marie,North,2027000
+2026-05,Marigold Marie,South,1861000
+2026-05,Marigold Marie,East,2329000
+2026-05,Marigold Marie,West,1391000
+2026-05,Crunchos,North,1412000
+2026-05,Crunchos,South,1284000
+2026-05,Crunchos,East,1386000
+2026-05,Crunchos,West,900000
+2026-05,Namkeen Nation,North,2768000
+2026-05,Namkeen Nation,South,2515000
+2026-05,Namkeen Nation,East,2803000
+2026-05,Namkeen Nation,West,1856000
+2026-05,PopKing,North,1170000
+2026-05,PopKing,South,1185000
+2026-05,PopKing,East,1222000
+2026-05,PopKing,West,867000
+2026-05,Aqualite,North,2066000
+2026-05,Aqualite,South,1864000
+2026-05,Aqualite,East,2239000
+2026-05,Aqualite,West,1708000
+2026-05,Zing Cola,North,1259000
+2026-05,Zing Cola,South,1124000
+2026-05,Zing Cola,East,1452000
+2026-05,Zing Cola,West,826000
+2026-05,Chai Mitra,North,1776000
+2026-05,Chai Mitra,South,1586000
+2026-05,Chai Mitra,East,1883000
+2026-05,Chai Mitra,West,1215000
+2026-05,SparkClean,North,3078000
+2026-05,SparkClean,South,2799000
+2026-05,SparkClean,East,2985000
+2026-05,SparkClean,West,1990000
+2026-05,FreshFloor,North,1938000
+2026-05,FreshFloor,South,1738000
+2026-05,FreshFloor,East,2256000
+2026-05,FreshFloor,West,1496000
+2026-05,DishBright,North,1399000
+2026-05,DishBright,South,1357000
+2026-05,DishBright,East,1669000
+2026-05,DishBright,West,1099000
+2026-05,Silkessa,North,1445000
+2026-05,Silkessa,South,1365000
+2026-05,Silkessa,East,1567000
+2026-05,Silkessa,West,1057000
+2026-05,MintGuard,North,1225000
+2026-05,MintGuard,South,1249000
+2026-05,MintGuard,East,1444000
+2026-05,MintGuard,West,938000
+2026-05,Aloe Vera Glow,North,2073000
+2026-05,Aloe Vera Glow,South,1823000
+2026-05,Aloe Vera Glow,East,2088000
+2026-05,Aloe Vera Glow,West,1422000
+2026-06,GlucoJoy,North,2371000
+2026-06,GlucoJoy,South,2177000
+2026-06,GlucoJoy,East,2208000
+2026-06,GlucoJoy,West,1726000
+2026-06,CremeDelight,North,2086000
+2026-06,CremeDelight,South,1847000
+2026-06,CremeDelight,East,2046000
+2026-06,CremeDelight,West,1553000
+2026-06,Marigold Marie,North,2178000
+2026-06,Marigold Marie,South,1923000
+2026-06,Marigold Marie,East,2329000
+2026-06,Marigold Marie,West,1589000
+2026-06,Crunchos,North,1384000
+2026-06,Crunchos,South,1232000
+2026-06,Crunchos,East,1367000
+2026-06,Crunchos,West,1008000
+2026-06,Namkeen Nation,North,2729000
+2026-06,Namkeen Nation,South,2628000
+2026-06,Namkeen Nation,East,3021000
+2026-06,Namkeen Nation,West,1848000
+2026-06,PopKing,North,1168000
+2026-06,PopKing,South,1236000
+2026-06,PopKing,East,1340000
+2026-06,PopKing,West,833000
+2026-06,Aqualite,North,2047000
+2026-06,Aqualite,South,2145000
+2026-06,Aqualite,East,2307000
+2026-06,Aqualite,West,1772000
+2026-06,Zing Cola,North,1371000
+2026-06,Zing Cola,South,1153000
+2026-06,Zing Cola,East,1276000
+2026-06,Zing Cola,West,959000
+2026-06,Chai Mitra,North,1904000
+2026-06,Chai Mitra,South,1662000
+2026-06,Chai Mitra,East,1808000
+2026-06,Chai Mitra,West,1249000
+2026-06,SparkClean,North,2932000
+2026-06,SparkClean,South,2859000
+2026-06,SparkClean,East,3073000
+2026-06,SparkClean,West,2155000
+2026-06,FreshFloor,North,2180000
+2026-06,FreshFloor,South,2077000
+2026-06,FreshFloor,East,2047000
+2026-06,FreshFloor,West,1477000
+2026-06,DishBright,North,1491000
+2026-06,DishBright,South,1411000
+2026-06,DishBright,East,1584000
+2026-06,DishBright,West,1094000
+2026-06,Silkessa,North,1549000
+2026-06,Silkessa,South,1255000
+2026-06,Silkessa,East,1519000
+2026-06,Silkessa,West,937000
+2026-06,MintGuard,North,1425000
+2026-06,MintGuard,South,1289000
+2026-06,MintGuard,East,1430000
+2026-06,MintGuard,West,864000
+2026-06,Aloe Vera Glow,North,1978000
+2026-06,Aloe Vera Glow,South,1721000
+2026-06,Aloe Vera Glow,East,2013000
+2026-06,Aloe Vera Glow,West,1444000
