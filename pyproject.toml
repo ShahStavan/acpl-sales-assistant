@@ -125,11 +125,16 @@ extend-ignore = ["E111", "E114", "E117", "E501", "W191"]
   "PLR2004",    # magic values in assertions
   "D",          # tests are documented by their names
   "ARG",        # fixtures are injected by name
+  "RUF012",     # fixture rows as class attributes: read-only test data, not shared state
+  "SLF001",     # tests reach for private helpers deliberately
 ]
 "eval/**" = ["T201", "PLR2004"]                  # runner prints its report
 "prepare.py" = ["T201"]                          # thin CLI shim
 "src/acpl_assistant/prepare/cli.py" = ["T201"]   # progress output is the interface
 "src/acpl_assistant/ask/intents.py" = ["S608"]   # parameterised SQL built from a fixed catalogue
+# Same shape: the only values interpolated are the numeric playbook thresholds defined at the
+# top of the module.  Every value that comes from a caller is bound as a query parameter.
+"src/acpl_assistant/actions/rules.py" = ["S608"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
