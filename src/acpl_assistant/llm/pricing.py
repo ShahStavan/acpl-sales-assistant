@@ -42,7 +42,12 @@ RATES: dict[str, RateCard] = {
     # the primary's — otherwise a degraded run reports a cost it did not incur. Text rates;
     # this service sends nothing but text, and the audio rates on the same page are higher.
     "gemini-3.1-flash-lite": RateCard(0.25, 1.50),
+    "gemini-3.5-flash-lite": RateCard(0.30, 2.50),
     "gemini-3.5-flash": RateCard(1.50, 9.00),
+    # Promotional rate, published as holding until 2026-12-31 and rising to 1.50/7.50 after.
+    # Committed at the rate in force on the read date above; when it moves, this line is the
+    # diff that says so, which is the whole reason the table is not fetched at runtime.
+    "gemini-3.6-flash": RateCard(0.75, 3.75),
     "gpt-4o-mini": RateCard(0.15, 0.60),
     "gpt-4o": RateCard(2.50, 10.00),
 }
