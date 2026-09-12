@@ -1,13 +1,236 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Artefact</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARTEFACT &mdash; ACPL Sales Focus &amp; Action Assistant</title>
+<style>
+  :root {
+    --bg: #fbfbf9; --fg: #1a1a18; --muted: #5c5c56; --rule: #e0e0d8;
+    --accent: #8a5a2b; --code-bg: #f2f2ec; --pending: #8a7a2b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16160f; --fg: #ececdf; --muted: #a3a396; --rule: #33332a;
+      --accent: #d6a15e; --code-bg: #20201a; --pending: #c8b45e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16160f; --fg: #ececdf; --muted: #a3a396; --rule: #33332a;
+    --accent: #d6a15e; --code-bg: #20201a; --pending: #c8b45e;
+  }
+  body {
+    background: var(--bg); color: var(--fg); margin: 0;
+    font: 16px/1.6 ui-serif, Georgia, "Times New Roman", serif;
+  }
+  .wrap {
+    max-width: 56rem; margin: 0 auto;
+    padding-block: 3rem; padding-left: 1.25rem; padding-right: 1.25rem;
+  }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .3rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.25rem; margin: 2.6rem 0 .8rem; padding-bottom: .3rem; border-bottom: 1px solid var(--rule); }
+  .lede { color: var(--muted); margin: 0 0 2rem; }
+  p { margin: 0 0 1rem; }
+  table { border-collapse: collapse; width: 100%; margin: 0 0 1.2rem; font-size: .92rem; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 600; color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; }
+  code, pre { background: var(--code-bg); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  code { padding: .1em .35em; border-radius: 3px; font-size: .88em; }
+  pre { padding: .9rem 1.1rem; border-radius: 5px; overflow-x: auto; margin: 0 0 1.2rem; }
+  pre code { background: none; padding: 0; }
+  .total { font-size: 1.55rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .pending { color: var(--pending); font-style: italic; }
+  a { color: var(--accent); }
+  .note { color: var(--muted); font-size: .92rem; }
+</style>
 </head>
 <body>
-  <p>
-    Fill this file with the written deliverable your problem brief asks for (for example, a
-    Reconciliation Report). The grader reads this exact file — do not rename or move it.
-  </p>
+<div class="wrap">
+
+<h1>ARTEFACT &mdash; self-audit</h1>
+<p class="lede">
+  What calling <code>/ask</code> and <code>/actions</code> does not show: what the system
+  actually holds, what it had to reconcile to hold it, and how well it answers. Every figure
+  below is produced by <code>prepare.py</code> and read from the committed
+  <code>prep_report.json</code>; none is typed by hand.
+</p>
+
+<pre><code>python prepare.py</code></pre>
+
+<p class="note">
+  <strong>Status.</strong> Sections 1 to 3 are complete and verified. Section 4 is pending: the
+  <code>/ask</code> pipeline and its evaluation are not built yet, so no accuracy, cost or
+  latency figure is claimed. An empty row is stated as empty rather than filled with a
+  placeholder.
+</p>
+
+<h2>1. Rows held from each file after preparation</h2>
+<p>
+  Source rows read, then rows the warehouse holds. They agree for every provided file: nothing
+  is dropped, deduplicated or filtered during preparation.
+</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Source file</th><th class="num">Rows read</th><th class="num">Rows held</th></tr></thead>
+  <tbody>
+    <tr><td><code>fact_primary_sales.csv</code></td><td class="num">74,880</td><td class="num">74,880</td></tr>
+    <tr><td><code>fact_targets.csv</code></td><td class="num">720</td><td class="num">720</td></tr>
+    <tr><td><code>stockouts.csv</code></td><td class="num">520</td><td class="num">520</td></tr>
+    <tr><td><code>promotions.csv</code></td><td class="num">40</td><td class="num">40</td></tr>
+    <tr><td><code>dim_sku.csv</code></td><td class="num">120</td><td class="num">120</td></tr>
+    <tr><td><code>dim_geo.csv</code></td><td class="num">12</td><td class="num">12</td></tr>
+    <tr><td><code>dim_distributor.csv</code></td><td class="num">40</td><td class="num">40</td></tr>
+    <tr><td><code>documents/*.docx</code></td><td class="num">6</td><td class="num">6</td></tr>
+    <tr><td><code>action_playbook.xlsx</code></td><td class="num">8</td><td class="num">8</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Three further tables are derived, not read, and exist so that no question has to recompute a
+  grain at query time.
+</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Derived table</th><th class="num">Rows</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td><code>sales_by_brand_region_week</code></td><td class="num">3,120</td><td>sales rolled up through both masters</td></tr>
+    <tr><td><code>sales_by_brand_region_month</code></td><td class="num">720</td><td>the same, rolled to the target grain</td></tr>
+    <tr><td><code>v_achievement</code></td><td class="num">720</td><td>a view joining actuals to targets</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Achievement is a view rather than a table because it is a pure join of two tables already
+  written. Materialising it would duplicate 720 rows and let the copies drift.
+</p>
+
+<h2>2. National FY26 primary-sales value total</h2>
+<p class="total">INR 1,357,631,078.74</p>
+<p>
+  The ledger covers FY26 and nothing else, so this is the sum of <code>value_inr</code> across
+  all 74,880 rows. The integration suite recomputes it in SQL directly against the warehouse and
+  asserts the two agree, so the published figure does not depend on the pandas path that
+  produced it.
+</p>
+
+<h2>3. Cross-source mismatches reconciled</h2>
+<p>
+  Found across the seven exports, the six documents and the playbook. All resolved in code, in
+  <code>prepare/conform.py</code>; no provided file is edited, and continuous integration fails
+  on any diff under <code>data/</code>.
+</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>#</th><th>Mismatch found</th><th>How it was resolved</th><th>Verified</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>The SKU key is spelled three ways: <code>sku_code</code> in sales and the product master, <code>sku</code> in promotions, <code>item_code</code> in stock-outs</td>
+      <td>Conformed all three to <code>sku_code</code> at load, then checked every fact row against the master</td>
+      <td>0 orphans across 74,880 + 520 + 40 rows</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Targets name their dimensions <code>brand_name</code> and <code>region_name</code>; every other file uses <code>brand</code> and <code>region</code></td>
+      <td>Conformed to the dimension spelling, which the masters own</td>
+      <td>720 of 720 target rows conformed</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>The stock-out region is free text typed into the distributor portal, holding 16 spellings of 4 regions</td>
+      <td>Derived the true region through the distributor and geography masters, used the portal text only to cross-check, then dropped it</td>
+      <td>0 conflicts across 520 rows</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Three date formats in three files: ISO in sales and stock-outs, year-month in targets, day-first in promotions</td>
+      <td>Parsed each with an explicit format, never inferred</td>
+      <td>The first promotion parses as 1 July 2025, not 7 January</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Grain disagreement: sales are SKU by territory by week, targets are brand by region by month</td>
+      <td>Rolled sales up through both masters, assigning each week to the month containing its start, which is the rule the data dictionary states</td>
+      <td>720 of 720 cells join, 0 orphans on either side</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Promotions are a SKU by region by date window, which matches no reporting period in any other file</td>
+      <td>Matched to sales weeks by date-range overlap rather than by month equality</td>
+      <td>40 matched, 39 measurable</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Playbook thresholds are English prose in a spreadsheet cell, not numbers</td>
+      <td>Parsed once at preparation into typed rule objects carrying the approval flag</td>
+      <td>8 rules parsed, 3 gated</td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>Documents name months without a year, and plain substring matching tagged the February visit note with Mar, taken out of the word Market</td>
+      <td>Matched whole words only, and resolved a month to a year-month key only where the text or the file name supplies a year</td>
+      <td>The visit note resolves to 2026-02 and carries no March</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p>
+  One promotion of the forty is not measurable. It starts in the first week of the fiscal year,
+  so no prior period exists to compare it against. The reconciliation records this as the reason
+  rather than counting it as a failure, and a promotion that is unmeasurable for any other
+  reason still fails the check.
+</p>
+<p>
+  The West distributor note names an April to June quarter with no year anywhere in the text or
+  its file name. Its months are therefore left unresolved rather than assumed to be FY26. This
+  is a deliberate choice: the fiscal year is knowable from context, but guessing it in the
+  loader would put an unsourced figure into evidence.
+</p>
+
+<h2>4. Evaluation &mdash; pending</h2>
+<p>
+  Not yet measurable. The <code>/ask</code> pipeline is not built, so there is no accuracy to
+  report, no gap to have closed, and no cost or latency to have observed.
+</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Figure</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Accuracy, first measured</td><td class="pending">pending</td></tr>
+    <tr><td>Largest gap found</td><td class="pending">pending</td></tr>
+    <tr><td>The one change made</td><td class="pending">pending</td></tr>
+    <tr><td>Accuracy after</td><td class="pending">pending</td></tr>
+    <tr><td>Median cost per question</td><td class="pending">pending</td></tr>
+    <tr><td>Latency p50 / p95</td><td class="pending">pending</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>5. How this was checked</h2>
+<p>
+  Preparation is gated, not merely reported. <code>python prepare.py</code> asserts twelve row
+  counts and all seven reconciliation items, and exits non-zero if any moves, so a changed input
+  fails the build instead of quietly shifting a figure published here.
+</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Check</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>Test suite</td><td>71 passing</td></tr>
+    <tr><td>Integration tests against the real pack</td><td>16</td></tr>
+    <tr><td>Lint and formatting</td><td>clean</td></tr>
+    <tr><td>Data pack modified</td><td>no, asserted by digest and by <code>git diff</code></td></tr>
+    <tr><td>Report determinism</td><td>two runs produce byte-identical JSON</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  The suite verifies the failure paths too, not only the happy path: a wrong row count, a
+  missing table and a failed reconciliation item each produce a gate failure.
+</p>
+
+</div>
 </body>
 </html>

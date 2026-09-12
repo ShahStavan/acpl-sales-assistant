@@ -305,6 +305,13 @@ erDiagram
     }
 ```
 
+Three further objects are derived at preparation, so no question recomputes a grain at query
+time. `sales_by_brand_region_week` (3,120 rows) and `sales_by_brand_region_month` (720 rows) are
+the roll-ups of §4.3; `v_achievement` (720 rows) joins the monthly roll-up to `fact_targets` and
+exposes `achievement_ratio`. Achievement is a **view**, not a table: it is a pure join of two
+tables already written, so materialising it would duplicate 720 rows and let the copies drift.
+Written by [`prepare/warehouse.py`](src/acpl_assistant/prepare/warehouse.py).
+
 ### 4.3 Grain reconciliation
 
 Sales are recorded at SKU × territory × week; targets at brand × region × month. Sales roll up
