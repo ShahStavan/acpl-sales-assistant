@@ -173,12 +173,20 @@ that do carry one.
 ## `GET /health`
 
 ```json
-{ "status": "ok", "warehouse": "/app/warehouse.duckdb", "model": "gemini-2.5-flash" }
+{
+  "status": "ok",
+  "warehouse": "/app/warehouse.duckdb",
+  "model": "gemini-2.5-flash",
+  "fallback_models": ["gemini-3.1-flash-lite", "gemini-3.5-flash"],
+  "degraded_models": []
+}
 ```
 
 Returns `503` with `"status": "degraded"` when the warehouse cannot be read, so a probe can
-tell "process up, data missing" from "process down". `model` is configuration, not a
-reachability claim — `/actions` needs no provider at all.
+tell "process up, data missing" from "process down". `model` and `fallback_models` are
+configuration, not a reachability claim — `/actions` needs no provider at all.
+`degraded_models` is observation: the models whose circuit breaker is open right now, empty
+until a provider call has actually been made.
 
 ## `POST /ask`
 
@@ -204,12 +212,17 @@ reason it could not be.
   ],
   "cost_usd": 0.000712,
   "latency_ms": 2841.3,
-  "timings_ms": { "guard": 0.1, "resolve": 12.4, "route": 1103.8, "execute": 31.2, "compose": 1691.0, "verify": 0.3 }
+  "timings_ms": { "guard": 0.1, "resolve": 12.4, "route": 1103.8, "execute": 31.2, "compose": 1691.0, "verify": 0.3 },
+  "models": ["gemini-2.5-flash", "gemini-2.5-flash"]
 }
 ```
 
 `answer`, `status`, `evidence`, `cost_usd` and `latency_ms` are the contract. `intent`,
-`timings_ms` and `reason` are **extra fields** beyond it.
+`timings_ms`, `models` and `reason` are **extra fields** beyond it.
+
+`models` names the provider model that served each of the request's two calls, in order. An
+entry other than the configured `LLM_MODEL` means that call fell back (see below), so an
+answer produced under degradation is never reported as if it were not.
 
 ### The pipeline
 
@@ -272,6 +285,42 @@ to fewer decimal places than it was computed to still matches — 93 may stand f
 because rounding a figure is restating it. Rescaling one is not: "2.2 crore" cannot stand
 for 22002083, since that is arithmetic, and arithmetic belongs in SQL.
 
+### Model fallback and the circuit breaker
+
+One provider, a chain of models: `LLM_MODEL` first, then each entry of `LLM_FALLBACK_MODELS`
+in order. A free-tier daily allowance is counted per *model id*, not per key —
+`gemini-2.5-flash` grants about 20 requests a day and a full evaluation run needs about 114 —
+so the chain is what lets a run finish without a paid key.
+
+A call steps to the next model only when the failure says the model is unavailable: `429`,
+`503`, a timeout, any `5xx`, or a `404` (the provider does not serve that id). It does **not**
+step across on a `400`, `401`, `403`, or a malformed response body. The chain shares one key,
+one endpoint and one payload shape, so those would be refused identically by every candidate;
+re-asking would spend three round-trips hiding one bug.
+
+Retry backoff is spent only on the last model in the chain. While a candidate remains,
+stepping costs nothing and can still answer; sleeping costs the caller seconds and cannot beat
+a quota measured per day.
+
+Two consecutive faults open that model's circuit breaker for `LLM_BREAKER_COOLDOWN_S`, during
+which the chain skips it with no call at all — an exhausted daily quota is then learned once
+rather than once per question. One fault does not open it: a single 429 can be a per-minute
+burst the next call clears. When the cooldown elapses the next call probes the model; success
+closes the breaker, another fault re-opens it at once. A chain whose every breaker is open
+still tries one model, so a cooldown can never itself become the outage.
+
+```
+LLM_MODEL=gemini-2.5-flash
+LLM_FALLBACK_MODELS=gemini-3.1-flash-lite,gemini-3.5-flash
+LLM_BREAKER_THRESHOLD=2        # consecutive faults that open a breaker
+LLM_BREAKER_COOLDOWN_S=300     # how long it stays open; 0 disables skipping
+```
+
+Leave `LLM_FALLBACK_MODELS` empty for single-model behaviour. Verify a chain before trusting
+it: on a key issued in 2026, `gemini-2.5-flash-lite` returns `404` ("no longer available to
+new users") and `gemini-3.5-flash-lite` rejects this request shape with `400` — the first
+falls back correctly, the second does not, by design.
+
 ### Cost and latency
 
 `cost_usd` is the provider's own reported token usage priced against a committed rate table
@@ -284,10 +333,14 @@ change because a web page did.
 | `gemini-2.5-flash` (default) | 0.30 | 2.50 |
 | `gemini-2.5-flash-lite` | 0.10 | 0.40 |
 | `gemini-2.5-pro` | 1.25 | 10.00 |
+| `gemini-3.1-flash-lite` | 0.25 | 1.50 |
+| `gemini-3.5-flash` | 1.50 | 9.00 |
 | `gpt-4o-mini` | 0.15 | 0.60 |
 | `gpt-4o` | 2.50 | 10.00 |
 
-A model with no card reports `0.0` and logs one warning — never a guessed rate. Gemini bills
+Each call is priced against the model that **served** it, so a request that fell back reports
+the cost it incurred rather than the primary's. A model with no card reports `0.0` and logs
+one warning — never a guessed rate. Gemini bills
 reasoning tokens as output but reports them only inside `total_tokens`, so output is priced
 at the wider of `completion_tokens` and `total_tokens − prompt_tokens`.
 
@@ -315,7 +368,12 @@ been routed correctly. Results are written to `eval/results/`.
 per-minute throttle out of the way, given two calls per question. It does nothing for the
 **daily** cap, which pacing cannot solve — the free allowance for `gemini-2.5-flash` is 20
 requests a day, and a full run needs about 114. Point `LLM_MODEL` at a model with a larger
-free allowance, or use a paid key.
+free allowance, set `LLM_FALLBACK_MODELS` so the service steps down when the primary runs out,
+or use a paid key.
+
+A run that fell back still measures the system, but a different configuration of it, so the
+summary carries `calls_by_model`. More than one entry means the accuracy figure is not any one
+model's, and the runner prints that alongside it.
 
 The runner abandons a run after three provider failures in a row (`--max-consecutive-faults`,
 0 to disable). A quota measured per day does not clear part-way through a run, and neither

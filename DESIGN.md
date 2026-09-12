@@ -203,6 +203,60 @@ only input to cost accounting (§6.1).
 The credential is the operator's own key, read from `LLM_API_KEY`. The OpenCode build token used
 during development is never read by the service and never reaches the repository.
 
+#### 3.5.1 Model chain and fallback
+
+One provider, but a *chain* of models: `LLM_MODEL` first, then each entry of
+`LLM_FALLBACK_MODELS` in order. The chain exists because a model id, not a key, is the unit a
+free-tier daily allowance is counted against — `gemini-2.5-flash` grants roughly twenty requests a
+day, and a full evaluation run needs about 114. Stepping to a model with its own allowance is what
+lets the run finish.
+
+A call falls back only when the failure describes the *model* as unavailable:
+
+| Observed | Reason token | Falls back? |
+|---|---|---|
+| 429, 503 | `provider_rate_limited` | yes |
+| timeout | `provider_timeout` | yes |
+| 5xx | `provider_error` | yes |
+| 404 — provider does not serve this model id | `provider_error` | yes |
+| 400, 401, 403 | `provider_error` | no |
+| transport error, non-JSON body, off-schema output | `provider_error` | no |
+
+The split is the point. The chain shares one key, one endpoint and one payload shape, so a 401 or a
+400 would be refused identically by every candidate; re-asking would multiply one bug into three
+round-trips and hide it. A malformed body is excluded for the same reason — it would let a defect in
+this module quietly spend the whole chain rather than surface.
+
+The retry budget (§3.5.2) is spent only on the *last* model in the chain. While a candidate remains,
+stepping across costs nothing and can still answer the question; sleeping costs the caller seconds
+and, against a daily quota, cannot succeed at all.
+
+#### 3.5.2 Circuit breaker
+
+[`llm/breaker.py`](src/acpl_assistant/llm/breaker.py) holds per-model, per-process state. Two
+consecutive faults (`LLM_BREAKER_THRESHOLD`) open a model's breaker for five minutes
+(`LLM_BREAKER_COOLDOWN_S`); while open, the chain skips it without a call. One fault does not open
+it — a single 429 can be a per-minute burst that the next call clears, and routing away from a
+healthy model for five minutes costs more than the retry it saves. Two in a row is not a burst.
+
+When the cooldown elapses the model goes half-open: the next call probes it, a success closes the
+breaker and clears its history, and another fault re-opens it immediately rather than granting a
+fresh run of attempts. A chain whose every breaker is open still tries one model — a cooldown that
+could refuse every request would have become the outage, and the probe is what ends it. A cooldown
+of `0` disables skipping entirely.
+
+The state is shared across threads (FastAPI runs the synchronous handlers in a thread pool) and
+taken under one lock; the clock is monotonic, so an NTP correction cannot hold a breaker open.
+
+#### 3.5.3 What the caller is told
+
+A degraded request is never reported as a clean one. `LLMResult.model` names the model that actually
+answered, the call is priced against *that* model's rate card (§6.1), the meter records one entry per
+call, and `/ask` returns them in `models` — so a response whose `models` is anything other than the
+configured primary is visibly a fallback. `GET /health` publishes `fallback_models` (configuration)
+and `degraded_models` (the breakers open right now). The evaluation runner aggregates the same field
+into `calls_by_model`, so an accuracy figure states which models produced it (§6.3).
+
 ### 3.6 Configuration
 
 All configuration is environment-driven and typed in [`config.py`](src/acpl_assistant/config.py);
@@ -218,6 +272,9 @@ All configuration is environment-driven and typed in [`config.py`](src/acpl_assi
 | `LLM_API_KEY` | — | Operator's own key; absence makes every `/ask` a `NO_ANSWER` with reason, never a crash |
 | `LLM_BASE_URL` | provider default | Override for OpenAI-compatible endpoints |
 | `LLM_TIMEOUT_S` | `30` | Per-call provider timeout |
+| `LLM_FALLBACK_MODELS` | — | Comma-separated models tried after `LLM_MODEL`, in order (§3.5.1) |
+| `LLM_BREAKER_THRESHOLD` | `2` | Consecutive faults that take a model out of rotation |
+| `LLM_BREAKER_COOLDOWN_S` | `300` | How long it stays out; `0` disables skipping |
 
 ---
 
@@ -472,6 +529,11 @@ request's LLM calls. A refusal caught before routing costs and reports `0.0`. Th
 free-tier key, so billed spend is nil while `cost_usd` reports the list-price equivalent of tokens
 actually consumed; the README states this distinction and the rate table.
 
+Each call is priced against the model that served it, which after a fallback is not the primary — so
+a degraded request reports the cost it incurred rather than the one it would have. Every model
+reachable through `LLM_FALLBACK_MODELS` therefore needs a card; a model without one reports `0.0`
+and one warning rather than a guessed rate, which is visible as zero cost against non-zero usage.
+
 ### 6.2 Latency
 
 `time.perf_counter_ns()` spans the whole handler — provider round-trip, SQL and verification
@@ -488,12 +550,19 @@ latency together. First-measured accuracy, the largest gap, the one change made,
 and median cost with p50/p95 latency are reported in [ARTEFACT.md](ARTEFACT.md); results are
 committed under `eval/results/`.
 
+A run that fell back is a valid measurement of a different system, so the summary carries
+`calls_by_model`: more than one entry means the accuracy figure is not one model's, and the runner
+says so. Provider faults are excluded from the denominator either way — a 429 says nothing about
+whether the question would have been routed correctly.
+
 ### 6.4 Observability and health
 
 Structured JSON logs carry one line per request with `intent`, `status`, `cost_usd`, `latency_ms`
 and the refusal reason where applicable; question text is logged only at `DEBUG`. A `GET /health`
-endpoint reports warehouse availability and the configured model, and backs the container health
-check. No secrets are ever logged.
+endpoint reports warehouse availability, the configured model and its fallback chain, and the
+models whose breaker is currently open, and backs the container health check. The per-request log
+line carries `models` alongside `cost_usd`, so a run that degraded is legible from the logs alone.
+No secrets are ever logged.
 
 ---
 
@@ -509,6 +578,9 @@ check. No secrets are ever logged.
 | Grouped, ranked, uncapped actions | Complete and usable | Longer response for `all` |
 | DuckDB file rather than hosted database | One-command reproducibility from the provided files | Concurrency the read-only service does not need |
 | Two LLM calls per question | Narrow, individually testable decisions | About twice the provider latency of one fused call |
+| Model chain over a single model | A free-tier daily quota stops ending the run; an outage on one model is survivable | Answers within a run are not all from one model, so accuracy must be reported per chain, not per model |
+| Fallback on availability faults only, never on a 400 | A bug in the request cannot spend three models hiding itself | A model-specific rejection of a valid payload is reported rather than routed around |
+| Hand-rolled chain rather than a routing library | No dependency, and the typed reason tokens, `usage`-based costing and rate table stay exactly as they were | Re-implements cooldown and fallback that LiteLLM's router provides |
 
 ---
 
@@ -561,7 +633,7 @@ flowchart TD
     SVC --> PIPE["ask/pipeline"] & ENG["actions/engine"]
     PIPE --> GUARD["ask/guard"] & RES["ask/resolve"] & RT["ask/router"] & EXE["ask/execute"] & COMP["ask/compose"] & VER["ask/verify"]
     EXE --> INT["ask/intents"]
-    RT & COMP --> LLM["llm/client"] --> PRICE["llm/pricing"]
+    RT & COMP --> LLM["llm/client"] --> PRICE["llm/pricing"] & BRK["llm/breaker"]
     PIPE --> MET["obs/meter"]
     ENG --> RULES["actions/rules"]
     PREP["prepare/cli"] --> LOAD["prepare/load"] --> CONF["prepare/conform"] --> WH["prepare/warehouse"]

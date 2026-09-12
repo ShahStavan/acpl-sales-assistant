@@ -63,6 +63,15 @@ token is spent; no intent or low confidence; zero rows. The verifier
 present in `evidence`; an ungrounded figure fails closed. Provider errors return `NO_ANSWER` with
 the reason.
 
+**Provider resilience.** One provider, a chain of models — `LLM_MODEL` then `LLM_FALLBACK_MODELS`
+([`client.py`](src/acpl_assistant/llm/client.py)) — because a free-tier daily quota is counted per
+model id: ~20/day on `gemini-2.5-flash` against ~114 calls for a full evaluation run. A call steps
+across only on faults that describe the *model* as unavailable (429/503, timeout, 5xx, 404), never
+on a 400 or a malformed body, which every candidate would refuse identically. Two consecutive faults
+open that model's breaker ([`breaker.py`](src/acpl_assistant/llm/breaker.py)) for five minutes, then
+one call probes it. Degradation is visible, not silent: each call is priced against the model that
+served it, and `/ask` returns them in `models`. Design detail in [DESIGN.md §3.5](DESIGN.md).
+
 ## C. Data & grounding
 
 **Routing.** The intent fixes the source set — Q1/Q3 sales-vs-target, Q4 stock-outs via the
@@ -123,16 +132,18 @@ distributor calls change a commitment. Nothing is executed in either state.
 
 **Cost** ([`src/acpl_assistant/obs/meter.py`](src/acpl_assistant/obs/meter.py), [`src/acpl_assistant/llm/pricing.py`](src/acpl_assistant/llm/pricing.py)):
 token counts from the provider's `usage` block — not an estimate, not a constant — priced against a
-per-model rate table and summed over the request's LLM calls. A pre-routing refusal reports `0.0`.
-The key is free-tier; `cost_usd` is the list-price equivalent of tokens consumed (stated in README).
+per-model rate table and summed over the request's LLM calls, each against the card of the model
+that served it. A pre-routing refusal reports `0.0`. The key is free-tier; `cost_usd` is the
+list-price equivalent of tokens consumed (stated in README).
 
 **Latency:** `perf_counter_ns` around the whole handler, provider round-trip included; per-stage
 `timings_ms` as an extra field.
 
 **Accuracy:** [`eval/questions.yaml`](eval/questions.yaml) covers every question and refusal category
 with paraphrases; each case asserts `status` and, for `OK`, the figure that must appear in `evidence`.
-One run yields accuracy, cost and latency. First accuracy, biggest gap, the one change, accuracy
-after, median cost and p50/p95 latency are in [ARTEFACT.md](ARTEFACT.md).
+One run yields accuracy, cost and latency, plus `calls_by_model` — more than one entry means the
+run fell back and the figure is not one model's. First accuracy, biggest gap, the one change,
+accuracy after, median cost and p50/p95 latency are in [ARTEFACT.md](ARTEFACT.md).
 
 ## F. Trade-offs
 
@@ -144,3 +155,4 @@ after, median cost and p50/p95 latency are in [ARTEFACT.md](ARTEFACT.md).
 | Uplift baseline: 4 pre-promo weeks, same SKU × region | Explainable, auditable | No seasonality correction; all 39 promotions show +13.5–44.7%, hence no R-02 case |
 | Region derived from `distributor_id` | Immune to 16 portal spellings | Drops a field that could disagree — mitigated by asserting 0 conflicts at prep |
 | Two LLM calls per question | Narrow, testable decisions | Roughly twice the latency of one fused call |
+| Model chain + circuit breaker, hand-rolled | A daily quota stops ending the run; no new dependency, and the typed reasons, `usage` costing and rate table are untouched | Answers in a run may span models; re-implements what LiteLLM's router offers |
