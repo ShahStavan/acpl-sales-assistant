@@ -1,0 +1,20 @@
+# Line endings are LF throughout this repository, matching .editorconfig's `end_of_line = lf`
+# and ruff's `line-ending = "lf"`.  Without this file the committed endings depend on each
+# developer's `core.autocrlf`, which is how DESIGN.md and opencode.json came to be stored with
+# CRLF while the rest of the tree used LF — and why the mixed-line-ending hook failed on files
+# nobody had edited.
+* text=auto eol=lf
+
+# The provided data pack is an input, not source.  Git must not rewrite a byte of it: the brief
+# forbids modifying it and CI asserts `git diff --exit-code -- data/`.  `-text` disables every
+# end-of-line conversion for these paths, whatever the platform.
+data/** -text
+
+# Binary artefacts, declared so no future rule can normalise them.
+*.pdf    binary
+*.xlsx   binary
+*.docx   binary
+*.duckdb binary
+*.png    binary
+*.jpg    binary
+*.ico    binary
