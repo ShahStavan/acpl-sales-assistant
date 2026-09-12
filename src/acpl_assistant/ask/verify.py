@@ -89,11 +89,21 @@ def _ground_value(value: Any, into: set[float]) -> None:
     Numbers go in directly; strings are re-read with the same extractor, so a date, an
     identifier and a rupee figure inside a finding sentence all ground the digits a reader
     would see in them.
+
+    A number grounds its magnitude as well as itself. The prose extractor reads digits and
+    cannot produce a negative — a minus sign is not part of what it matches — so a row
+    holding ``delta_value_inr: -1985290`` could never ground the "1,985,290" an answer
+    writes when it says sales *fell* by that much. Every declining comparison and every
+    below-target gap failed this check for having stated its figure the way English states
+    it. Grounding the magnitude concedes nothing: the digits still have to come from a row.
+    Which *direction* those digits point is what the premise check below settles, and it
+    reads the sign off the column rather than out of the prose.
     """
     if isinstance(value, bool) or value is None:
         return
     if isinstance(value, (int, float)):
         into.add(float(value))
+        into.add(abs(float(value)))
         return
     for token in _numerals(str(value)):
         number = _as_number(token)

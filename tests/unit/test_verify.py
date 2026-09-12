@@ -68,6 +68,22 @@ class TestGroundedValues:
         values = grounded_values([], slots(period=Q4, compare_to=Q3))
         assert {1.0, 3.0, 4.0} <= values
 
+    def test_a_negative_figure_grounds_its_magnitude_too(self) -> None:
+        """Prose says sales "fell by 1,985,290"; the row says ``-1985290``.
+
+        The numeral extractor reads digits and cannot match a minus sign, so without the
+        magnitude a declining comparison could never state its own figure.
+        """
+        rows = [{"delta_value_inr": -1985290, "change_pct": -17}]
+        values = grounded_values(rows, slots())
+        assert {1985290.0, 17.0} <= values
+        assert {-1985290.0, -17.0} <= values
+
+    def test_a_decline_can_be_written_the_way_english_writes_it(self) -> None:
+        rows = [{"from_value_inr": 11369222, "to_value_inr": 9383932, "delta_value_inr": -1985290}]
+        answer = "Sales fell by 1,985,290, from 11,369,222 to 9,383,932."
+        assert ungrounded_figures(answer, grounded_values(rows, slots())) == []
+
     def test_a_named_entity_grounds_its_own_digits(self) -> None:
         entities = Entities(pack_sizes=["1L"], skus=["BV-0104"])
         assert {1.0, 104.0} <= grounded_values([], slots(entities=entities))
