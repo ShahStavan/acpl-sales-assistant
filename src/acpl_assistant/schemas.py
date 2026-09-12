@@ -1,9 +1,9 @@
 """Pydantic request and response models for the HTTP contract.
 
 ``/ask``: ``{question}`` → ``{answer, status, evidence, cost_usd, latency_ms}`` plus the
-documented extra fields ``timings_ms`` and ``intent``. ``/actions``: ``{scope}`` → a list of
-``{finding, rule_id, action, state}`` plus ``period``, ``evidence``, ``priority``.
-DESIGN.md Appendix A.
+documented extra fields ``timings_ms``, ``intent`` and ``reason``. ``/actions``: ``{scope}``
+→ a list of ``{finding, rule_id, action, state}`` plus ``period``, ``evidence``,
+``priority``. DESIGN.md Appendix A.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ class ActionItem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# POST /ask  (contract fixed here; the pipeline arrives in Phase 3)
+# POST /ask
 # ---------------------------------------------------------------------------
 
 AskStatus = Literal["OK", "NO_ANSWER"]
@@ -85,10 +85,20 @@ class AskRequest(BaseModel):
 
 
 class AskResponse(BaseModel):
-    """Response body for ``POST /ask``."""
+    """Response body for ``POST /ask``.
+
+    ``reason`` is a documented extra field, and the one the evaluation set asserts on. The
+    ``answer`` of a refusal is a sentence written for a reader, so scoring against it would
+    be scoring prose; the reason is a stable token — ``unknown_entity``, ``no_route``,
+    ``ungrounded_figure`` — that says which refusal class fired. It is ``null`` on ``OK``.
+    """
 
     answer: str
     status: AskStatus
+    reason: str | None = Field(
+        default=None,
+        description="Refusal class when status is NO_ANSWER; null when the question was answered.",
+    )
     evidence: list[EvidenceRow] = Field(default_factory=list)
     cost_usd: float = Field(ge=0.0)
     latency_ms: float = Field(ge=0.0)

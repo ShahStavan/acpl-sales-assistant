@@ -4,15 +4,19 @@ Exposes ``POST /ask`` and ``POST /actions``; ``main()`` runs uvicorn on ``PORT``
 opens the DuckDB warehouse read-only and has no write path or outbound channel other than the
 LLM provider. DESIGN.md §3.2.
 
-``POST /ask`` is not registered yet: its pipeline arrives with Phase 3. A stub returning
-``NO_ANSWER`` would be indistinguishable from a real refusal to the evaluation runner and
-would corrupt the first accuracy measurement, so the route is absent rather than dishonest.
+Three things are built once and shared for the life of the process: the warehouse handle, the
+vocabulary read out of it, and the provider connection. All three are expensive per request
+and none of them changes between requests, so building any of them inside the handler would
+show up in the latency the handler reports.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager
 from functools import lru_cache
+import json
+import logging
 from pathlib import Path
 from typing import Annotated
 
@@ -22,17 +26,51 @@ from fastapi import Depends, FastAPI, HTTPException, Response, status
 
 from acpl_assistant import __version__
 from acpl_assistant.actions.engine import run_actions
+from acpl_assistant.ask.pipeline import AskOutcome, answer_question
+from acpl_assistant.ask.resolve import Vocabulary, build_vocabulary
 from acpl_assistant.config import Settings, get_settings
-from acpl_assistant.schemas import ActionItem, ActionsRequest, HealthResponse
+from acpl_assistant.llm.client import LLMClient
+from acpl_assistant.obs.meter import Meter
+from acpl_assistant.schemas import (
+    ActionItem,
+    ActionsRequest,
+    AskRequest,
+    AskResponse,
+    HealthResponse,
+    evidence_from_rows,
+)
+
+logger = logging.getLogger(__name__)
 
 WAREHOUSE_MISSING = (
     "The warehouse is not available. Build it with `python prepare.py` before serving."
 )
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Hold the shared provider connection open for the life of the process.
+
+    Nothing is opened here. The warehouse and the vocabulary are built on first use so that
+    a process started without a warehouse still serves ``/health`` and reports what is
+    wrong, rather than failing to start and leaving the operator to read a traceback.
+    """
+    try:
+        yield
+    finally:
+        # Only if one was ever built: a process that served nothing but /health and
+        # /actions never touched the provider, and shutdown should not be the first
+        # thing that constructs a client.
+        if get_client.cache_info().currsize:
+            get_client().close()
+            get_client.cache_clear()
+
+
 app = FastAPI(
     title="ACPL Sales Focus & Action Assistant",
     version=__version__,
     summary="Grounded answers over FY26 sales data and weekly actions from ACPL's playbook.",
+    lifespan=lifespan,
 )
 
 
@@ -50,6 +88,42 @@ def open_warehouse(path: Path) -> DuckDBPyConnection:
     file per request would dominate the latency the endpoint reports.
     """
     return duckdb.connect(str(path), read_only=True)
+
+
+@lru_cache(maxsize=1)
+def get_vocabulary(path: Path) -> Vocabulary:
+    """Read every name the warehouse knows, once per process.
+
+    The vocabulary is what turns "Aqualite" into a brand the data holds and "Jaipor" into an
+    ``unknown_entity`` refusal. It is derived from the dimension tables, which ``prepare.py``
+    wrote and nothing at serve time can change, so reading it per request would be ten
+    queries spent re-learning a fixed answer.
+    """
+    con = open_warehouse(path).cursor()
+    try:
+        return build_vocabulary(con)
+    finally:
+        con.close()
+
+
+@lru_cache(maxsize=1)
+def get_client() -> LLMClient:
+    """Return the process-wide provider client, built from the cached settings.
+
+    No argument, because :class:`~acpl_assistant.config.Settings` is not hashable and the
+    settings are themselves a singleton; the cache here is over the one connection pool.
+    """
+    return LLMClient(get_settings())
+
+
+def get_vocab(settings: Annotated[Settings, Depends(get_settings)]) -> Vocabulary:
+    """Dependency wrapper over the cached vocabulary, so a test can substitute one."""
+    try:
+        return get_vocabulary(settings.acpl_warehouse_resolved)
+    except duckdb.Error as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=WAREHOUSE_MISSING
+        ) from exc
 
 
 def get_connection(
@@ -75,8 +149,68 @@ def get_connection(
 
 
 # ---------------------------------------------------------------------------
+# Request log
+# ---------------------------------------------------------------------------
+
+
+def _log_request(outcome: AskOutcome, question: str) -> None:
+    """Emit one structured line per ``/ask``, with the metered figures it was served under.
+
+    The question itself is logged only at DEBUG. An operator reading INFO logs should be
+    able to see cost, latency and refusal rates without also holding a transcript of what
+    every user asked (DESIGN.md §6.3).
+    """
+    logger.info(
+        "%s",
+        json.dumps(
+            {
+                "event": "ask",
+                "status": outcome.status,
+                "reason": outcome.reason,
+                "intent": outcome.intent,
+                "evidence_rows": len(outcome.evidence),
+                "cost_usd": outcome.cost_usd,
+                "latency_ms": outcome.latency_ms,
+                "timings_ms": outcome.timings_ms,
+            },
+            separators=(",", ":"),
+        ),
+    )
+    logger.debug("question: %s", question)
+
+
+# ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+
+@app.post("/ask", response_model=AskResponse)
+def ask(
+    request: AskRequest,
+    con: Annotated[DuckDBPyConnection, Depends(get_connection)],
+    vocabulary: Annotated[Vocabulary, Depends(get_vocab)],
+    client: Annotated[LLMClient, Depends(get_client)],
+) -> AskResponse:
+    """Answer one question about FY26, or say which refusal class stopped it.
+
+    Every outcome is a 200. A question outside the catalogue, a name the data does not hold,
+    a figure the verifier cannot ground and a provider that is down all return ``NO_ANSWER``
+    with a reason; none of them is a server error, because none of them is this service
+    malfunctioning (DESIGN.md §2.4).
+    """
+    meter = Meter()
+    outcome = answer_question(con, client, vocabulary, request.question, meter)
+    _log_request(outcome, request.question)
+    return AskResponse(
+        answer=outcome.answer,
+        status=outcome.status,
+        reason=outcome.reason,
+        evidence=evidence_from_rows(outcome.evidence),
+        cost_usd=outcome.cost_usd,
+        latency_ms=outcome.latency_ms,
+        timings_ms=outcome.timings_ms,
+        intent=outcome.intent,
+    )
 
 
 @app.post("/actions", response_model=list[ActionItem])

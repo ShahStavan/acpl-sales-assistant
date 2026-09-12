@@ -1,8 +1,9 @@
 """The HTTP surface: ``POST /actions`` and ``GET /health`` over the prepared warehouse.
 
-Exercised through ``TestClient``, with no live LLM key and no network. The actions engine
-needs neither, which is the whole reason this endpoint can be verified before a provider is
-wired in.
+Exercised through ``TestClient``, with no live LLM key and no network. Neither endpoint
+calls a provider — the actions engine is code only and ``/health`` reports configuration —
+so everything here is verifiable without spending a token. ``/ask`` needs a provider double
+and lives in ``test_ask.py``.
 """
 
 from __future__ import annotations
@@ -131,14 +132,19 @@ class TestHealthEndpoint:
         assert client.get("/health").json()["model"] == Settings().LLM_MODEL
 
 
-class TestAskIsNotYetServed:
-    def test_the_route_is_absent_rather_than_stubbed(self, client: TestClient) -> None:
-        """A stub returning NO_ANSWER would read as a real refusal and corrupt the eval."""
-        assert client.post("/ask", json={"question": "Anything at all?"}).status_code == 404
+class TestPublishedSurface:
+    """The three routes, and nothing else. ``/ask`` is exercised in ``test_ask.py``, which
+    substitutes a provider double; here it only has to be advertised.
+    """
 
-    def test_the_openapi_document_does_not_advertise_it(self, client: TestClient) -> None:
+    def test_the_openapi_document_lists_exactly_the_contract(self, client: TestClient) -> None:
         paths = client.get("/openapi.json").json()["paths"]
-        assert set(paths) == {"/actions", "/health"}
+        assert set(paths) == {"/ask", "/actions", "/health"}
+
+    def test_ask_publishes_its_refusal_reason(self, client: TestClient) -> None:
+        """``reason`` is the field the evaluation set asserts on, so it is part of the schema."""
+        schema = client.get("/openapi.json").json()["components"]["schemas"]["AskResponse"]
+        assert "reason" in schema["properties"]
 
 
 class TestConcurrency:
