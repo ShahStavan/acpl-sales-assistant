@@ -1,48 +1,230 @@
-# F1 Capstone Template
+# ACPL Sales Focus & Action Assistant
 
-Starter repository for the Cadra F1 walking-skeleton capstone. Use OpenCode with the Cadra provider to build your solution, document your approach, and submit a public GitHub repo for evaluation.
+Grounded answers over Aravalli Consumer Products' FY26 sales data, and weekly actions drawn
+from ACPL's own action playbook.
+
+**Governing principle: numbers are computed by code, never by a model.** The LLM classifies a
+question and renders prose; every figure originates in a SQL result and every action in a
+playbook rule evaluated in code. `POST /actions` calls no model at all.
+
+| Artefact | What it is |
+|---|---|
+| [APPROACH.md](APPROACH.md) | Two-page design summary (sections A–F) |
+| [DESIGN.md](DESIGN.md) | Detailed design, diagrams, module map |
+| [ARTEFACT.md](ARTEFACT.md) · [ARTEFACT.html](ARTEFACT.html) | Self-audit in measured numbers |
+| [eval/](eval/) | Labelled evaluation set, runner, committed results |
+
+## Status
+
+| Endpoint | State |
+|---|---|
+| `POST /actions` | **Serving.** All eight playbook rules, approval gating, ranked output |
+| `GET /health` | **Serving.** |
+| `POST /ask` | Not yet registered — the pipeline is the next phase. The route returns 404 rather than a stub, because a stubbed `NO_ANSWER` would be indistinguishable from a real refusal and would corrupt the first accuracy measurement |
 
 ## Prerequisites
 
-- Python 3.11+
-- [OpenCode](https://opencode.ai) ≥ 1.17.0
-- A Cadra JWT (`CADRA_TOKEN`) from the F1 Setup page
-- Your Cadra proxy URL (from the F1 Setup page)
+- Python 3.11 or newer
+- No API key is needed for data preparation or for `/actions`; the engine is code only
 
-## Setup
-
-1. Clone this repo (or use it as a GitHub template).
-2. Set the environment variables (both values come from the F1 Setup page):
-   ```bash
-   export CADRA_PROXY_URL=<your-proxy-url>   # e.g. https://your-proxy.example.com/v1
-   export CADRA_TOKEN=<your-cadra-jwt>
-   ```
-   `opencode.json` reads both via `{env:…}` — no file edits needed.
-3. Install OpenCode if not already installed (see [opencode.ai](https://opencode.ai)).
-4. Run OpenCode in this directory:
-   ```bash
-   opencode
-   ```
-5. Complete `APPROACH.md` and implement your solution in `src/` (start with `src/solution.py`).
-6. Push your work to a **public** GitHub repository.
-7. Submit your repo URL on the F1 demo page.
-
-## Python environment (optional)
+## Install
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"          # or: pip install -r requirements.txt
 ```
 
-## Project layout
+## Prepare the data
+
+One command reads the provided pack, reconciles it and writes the warehouse:
+
+```bash
+python prepare.py
+```
+
+It produces `warehouse.duckdb` and `prep_report.json`, printing every reconciliation outcome
+as it goes. The command is **gated**: it asserts twelve row counts and all seven
+reconciliation items, and exits non-zero if any moves, so a changed input fails the build
+rather than quietly shifting a figure that ARTEFACT.md has already published.
+
+The provided data pack under `data/` is never modified — preparation only reads it, and CI
+fails on any diff there.
+
+## Run the service
+
+```bash
+python -m uvicorn acpl_assistant.service:app --host 0.0.0.0 --port 8000
+# or:  make serve          # or:  acpl-serve
+```
+
+The service opens the warehouse **read-only**. It has no write path, and no outbound channel
+other than the configured LLM provider (which `/actions` never uses).
+
+Copy `.env.example` to `.env` to change the port, the warehouse path or the provider
+settings. `.env` is git-ignored; never commit a key.
+
+## Containers
+
+```bash
+docker build -t acpl-assistant .
+docker run --rm -p 8000:8000 acpl-assistant
+```
+
+The image prepares the data at build time and runs as a non-root user.
+
+---
+
+## `POST /actions`
+
+Every playbook rule that fires for a scope, ranked, with the figures and source rows behind
+each. No model is called, so the response is reproducible from the warehouse alone.
+
+**Request**
+
+```json
+{ "scope": "West" }
+```
+
+**Response** — a JSON array, most urgent first:
+
+```json
+[
+  {
+    "finding": "Aqualite in the West reached 62% of target over 2026-04..2026-06, INR 1,912,659 below plan, with its SKUs out of stock in 9 weeks there.",
+    "rule_id": "R-01",
+    "action": "Expedite replenishment and escalate to the regional supply lead",
+    "state": "PENDING_APPROVAL",
+    "period": "2026-04..2026-06",
+    "evidence": [
+      { "source_file": "fact_primary_sales.csv", "month": "2026-04", "brand": "Aqualite", "region": "West", "actual_value_inr": 963021.12 },
+      { "source_file": "fact_targets.csv", "month": "2026-04", "brand": "Aqualite", "region": "West", "target_value_inr": 1553000 }
+    ],
+    "priority": 1
+  }
+]
+```
+
+### Fields
+
+`finding`, `rule_id`, `action` and `state` are the contract. The rest are **extra fields**
+beyond it, documented here:
+
+| Field | Meaning |
+|---|---|
+| `finding` | What was observed, in the figures that triggered the rule. Templated from those figures — no model writes it, and every numeral in it also appears in `evidence` or in the period |
+| `rule_id` | The playbook rule that fired, `R-01` to `R-08` |
+| `action` | ACPL's own prescribed action, quoted from `action_playbook.xlsx` |
+| `state` | `PENDING_APPROVAL` or `RECOMMENDED` — see below |
+| `period` | The period the finding covers: `2026-02`, `2026-04..2026-06`, or ISO dates for week-grain rules (`2026-04-14..2026-06-09`) |
+| `evidence` | The source rows the finding was computed from, each naming its `source_file` |
+| `priority` | 1-based rank over the returned list, most recent and most at risk first |
+
+### Scope
+
+`scope` resolves case-insensitively to one of the four held regions, or to `all`. A trailing
+"region", "india" or "zone" is tolerated, so `"west"`, `"WEST"` and `"west region"` all mean
+West.
+
+**Anything else returns `[]`.** There is deliberately no fuzzy matching: resolving `"Wets"` to
+West would hand a manager the actions for a region they did not ask about, and a withheld
+empty list is the safer failure. A scope with nothing to report also returns `[]` — no filler
+is invented to fill a quiet week.
+
+A scope field that is absent or not a string is a `422`, not an empty list: a malformed
+request and an unrecognised region are different failures.
+
+### Approval gating
+
+`state` is read from the playbook's `needs_approval` column, never inferred. R-01, R-04 and
+R-08 are `PENDING_APPROVAL`; the rest are `RECOMMENDED`. The escalation SOP agrees
+independently — supply escalations, replenishment orders and distributor calls change a
+commitment, while analysis and review do not.
+
+**Nothing is executed in either state.** The service has no outbound channel and no write
+path; it reports what should happen and stops there.
+
+### The eight rules
+
+| Rule | Condition as coded | Approval | Fires in FY26 |
+|---|---|---|---|
+| R-01 | achievement < 70% and ≥ 2 stock-out weeks on the brand's SKUs in that region | **Yes** | Aqualite / West / Apr–Jun at 62% |
+| R-02 | achievement < 80%, promotion overlapping the month, uplift < 10% | No | none |
+| R-03 | achievement < 80%, no stock-out, no promotion, supporting note | No | CremeDelight / North / Feb at 72% |
+| R-04 | one distributor × SKU out of stock more than 6 weeks | **Yes** | D032 and D033 × BV-0104, 9 weeks each |
+| R-05 | achievement > 110% | No | none — the best cell is 108.7% |
+| R-06 | achievement < 80%, no stock-out, no promotion, no note | No | MintGuard / East / Mar at 74% |
+| R-07 | promotion uplift > 25% | No | 23 promotions |
+| R-08 | distributor with ≥ 3 distinct SKUs out in a month | **Yes** | 27 distributors |
+
+R-02 and R-05 have no qualifying case on this data. Both stay implemented and tested; the
+system reports no case rather than moving a threshold until something appears.
+
+Findings are **grouped by the entity the action targets** — one R-01 for Aqualite in the West
+citing three months, one R-08 per distributor citing its months — then ranked by recency and
+rupees at risk. Nothing is capped: `{"scope": "all"}` returns the complete list of 55 actions.
+
+Two rules carry no rupee figure. The stock-out log holds days, not value, so R-04 and R-08
+rank on weeks and SKUs out rather than on an invented rupee proxy, and sort after findings
+that do carry one.
+
+## `GET /health`
+
+```json
+{ "status": "ok", "warehouse": "/app/warehouse.duckdb", "model": "gemini-2.5-flash" }
+```
+
+Returns `503` with `"status": "degraded"` when the warehouse cannot be read, so a probe can
+tell "process up, data missing" from "process down". `model` is configuration, not a
+reachability claim — `/actions` needs no provider at all.
+
+## `POST /ask`
+
+Not yet served. The contract, the question taxonomy, the refusal classes and the cost and
+latency reporting are specified in [DESIGN.md §3](DESIGN.md) and Appendix A; the pricing
+table lands with the implementation.
+
+---
+
+## Development
+
+```bash
+make lint      # ruff check + ruff format --check
+make format    # auto-fix and format
+make test      # unit and integration tests with coverage
+make check     # everything CI runs
+```
+
+On Windows, run the underlying commands directly (`ruff check .`, `pytest --cov`, and so on).
+
+Tests split by marker: `pytest -m "not integration"` runs the fast unit suite;
+`pytest -m integration` exercises the real data pack and the HTTP app. **No test requires a
+live LLM key**, and none makes a network call.
+
+CI runs lint, format, `python prepare.py`, the tests, and `git diff --exit-code -- data/` to
+prove the provided pack is unchanged.
+
+## Repository layout
 
 ```
 .
-├── opencode.json    # Cadra provider config (reads CADRA_PROXY_URL + CADRA_TOKEN from env)
-├── APPROACH.md      # Your written approach (required for submission)
-├── src/
-│   └── solution.py  # Your solution code
-├── requirements.txt
-└── README.md
+├── prepare.py                  # one-command preparation (shim → acpl_assistant.prepare.cli)
+├── data/<pack>/                # provided data pack — read-only, committed for reproducibility
+├── eval/                       # labelled cases, runner, committed results
+├── src/acpl_assistant/
+│   ├── config.py               # typed settings from env
+│   ├── schemas.py              # request/response models
+│   ├── service.py              # FastAPI app, /actions, /health, main()
+│   ├── prepare/                # cli · load · conform · warehouse
+│   ├── ask/                    # guard · resolve · router · intents · execute · compose · verify · pipeline
+│   ├── actions/                # rules · engine
+│   ├── llm/                    # client · pricing
+│   └── obs/                    # meter
+└── tests/
+    ├── unit/                   # pure functions and synthetic warehouses
+    └── integration/            # prepared warehouse + HTTP app (no live LLM)
 ```
+
+`prepare/` never imports from `ask/` or `actions/`; `actions/` never imports `llm/` — the
+rules engine is LLM-free by design. Both boundaries are asserted by a test, not just stated
+here.

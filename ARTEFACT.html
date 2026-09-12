@@ -29,6 +29,7 @@
   }
   h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .3rem; letter-spacing: -.01em; }
   h2 { font-size: 1.25rem; margin: 2.6rem 0 .8rem; padding-bottom: .3rem; border-bottom: 1px solid var(--rule); }
+  h3 { font-size: 1.02rem; margin: 1.8rem 0 .6rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
   .lede { color: var(--muted); margin: 0 0 2rem; }
   p { margin: 0 0 1rem; }
   table { border-collapse: collapse; width: 100%; margin: 0 0 1.2rem; font-size: .92rem; }
@@ -60,7 +61,7 @@
 <pre><code>python prepare.py</code></pre>
 
 <p class="note">
-  <strong>Status.</strong> Sections 1 to 3 are complete and verified. Section 4 is pending: the
+  <strong>Status.</strong> Sections 1 to 4 are complete and verified. Section 5 is pending: the
   <code>/ask</code> pipeline and its evaluation are not built yet, so no accuracy, cost or
   latency figure is claimed. An empty row is stated as empty rather than filled with a
   placeholder.
@@ -189,7 +190,68 @@
   loader would put an unsourced figure into evidence.
 </p>
 
-<h2>4. Evaluation &mdash; pending</h2>
+<h2>4. Actions the playbook yields on this data</h2>
+<p>
+  All eight rules evaluated over FY26 by <code>actions/rules.py</code>, grouped by the entity
+  each action targets. No model is involved, so these counts are reproducible from
+  <code>warehouse.duckdb</code> alone; every one is asserted in the integration suite.
+</p>
+<div class="scroll">
+<table>
+  <thead><tr>
+    <th>Rule</th><th>Approval</th><th class="num">Findings</th>
+    <th class="num">Actions after grouping</th><th>What fired</th>
+  </tr></thead>
+  <tbody>
+    <tr><td>R-01</td><td class="pending">PENDING_APPROVAL</td><td class="num">3</td><td class="num">1</td><td>Aqualite in the West, April to June, all three months at 62% of target with 3, 4 and 2 stock-out weeks</td></tr>
+    <tr><td>R-02</td><td>RECOMMENDED</td><td class="num">0</td><td class="num">0</td><td>No case &mdash; no promotion is weak enough</td></tr>
+    <tr><td>R-03</td><td>RECOMMENDED</td><td class="num">1</td><td class="num">1</td><td>CremeDelight in the North, February, 72%, with the visit note covering it</td></tr>
+    <tr><td>R-04</td><td class="pending">PENDING_APPROVAL</td><td class="num">2</td><td class="num">2</td><td>D032 and D033 on BV-0104, 9 weeks each, 14 April to 9 June</td></tr>
+    <tr><td>R-05</td><td>RECOMMENDED</td><td class="num">0</td><td class="num">0</td><td>No case &mdash; the best cell in FY26 is 108.7%</td></tr>
+    <tr><td>R-06</td><td>RECOMMENDED</td><td class="num">1</td><td class="num">1</td><td>MintGuard in the East, March, 74%, with no note to explain it</td></tr>
+    <tr><td>R-07</td><td>RECOMMENDED</td><td class="num">23</td><td class="num">23</td><td>23 of 39 measurable promotions beat 25% uplift</td></tr>
+    <tr><td>R-08</td><td class="pending">PENDING_APPROVAL</td><td class="num">47</td><td class="num">27</td><td>47 distributor-months collapse to one stock-review call per distributor</td></tr>
+    <tr><td></td><td></td><td class="num"><strong>77</strong></td><td class="num"><strong>55</strong></td><td><code>{"scope": "all"}</code> returns 55 actions, uncapped</td></tr>
+  </tbody>
+</table>
+</div>
+<p>
+  Two rules report nothing. That is the finding, not a gap: <strong>R-02</strong> requires a
+  promotion running under 10% uplift while the brand misses target, and the weakest of the 39
+  measurable promotions delivered 13.5%; <strong>R-05</strong> requires achievement above 110%,
+  and the best cell in the year reached 108.7%. Both remain implemented, and both are proven to
+  fire on synthetic data built to cross their thresholds &mdash; without that, &ldquo;no
+  qualifying case&rdquo; and &ldquo;dead code&rdquo; would look identical from the outside.
+</p>
+<p>
+  Uplift is measured against the four weeks preceding each promotion, for the same SKU and
+  region. Thirty-seven promotions have a full four; one has three and one has two, because the
+  fiscal year starts. The fortieth opens in the first week of the ledger with no prior period at
+  all, and is reported as unmeasurable rather than counted as zero. Across the 39, uplift runs
+  from 13.5% to 44.7%.
+</p>
+<p>
+  The roll-up to SKU by region by week has to happen <em>before</em> those four weeks are taken.
+  Sales are held at SKU by territory by week and a region holds three territories, so reading the
+  baseline as the last four <em>rows</em> would compare a promotion against barely more than one
+  week of trading and report uplifts of 63% to 131% instead. A test holds that boundary.
+</p>
+<h3>What the figures are grounded in</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>Property</th><th>How it is enforced</th></tr></thead>
+  <tbody>
+    <tr><td>Every numeral in a <code>finding</code> also appears in that action's <code>evidence</code> or period</td><td>Asserted over all 55 actions; the check itself is tested against an invented figure so it cannot pass vacuously</td></tr>
+    <tr><td><code>state</code> comes from the playbook, not the code</td><td>Asserted by inverting every <code>needs_approval</code> flag and requiring every state to invert with it</td></tr>
+    <tr><td><code>action</code> text is ACPL's wording</td><td>Read from <code>action_playbook.xlsx</code>, not written here</td></tr>
+    <tr><td>The same warehouse gives the same list</td><td>Two runs compared byte for byte. Every rule query carries an explicit <code>ORDER BY</code>: DuckDB aggregates in parallel and would otherwise return evidence in a different order each call</td></tr>
+    <tr><td>No action is lost or double-counted by scope</td><td>The four regions' lists union to exactly the <code>all</code> list</td></tr>
+    <tr><td>The rules engine never calls a model</td><td><code>actions/</code> is asserted not to import <code>llm/</code>, by scanning the imports rather than trusting the convention</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>5. Evaluation &mdash; pending</h2>
 <p>
   Not yet measurable. The <code>/ask</code> pipeline is not built, so there is no accuracy to
   report, no gap to have closed, and no cost or latency to have observed.
@@ -208,7 +270,7 @@
 </table>
 </div>
 
-<h2>5. How this was checked</h2>
+<h2>6. How this was checked</h2>
 <p>
   Preparation is gated, not merely reported. <code>python prepare.py</code> asserts twelve row
   counts and all seven reconciliation items, and exits non-zero if any moves, so a changed input
@@ -218,17 +280,23 @@
 <table>
   <thead><tr><th>Check</th><th>Result</th></tr></thead>
   <tbody>
-    <tr><td>Test suite</td><td>71 passing</td></tr>
-    <tr><td>Integration tests against the real pack</td><td>16</td></tr>
+    <tr><td>Test suite</td><td>219 passing</td></tr>
+    <tr><td>Integration tests against the real pack and the HTTP app</td><td>76</td></tr>
+    <tr><td>Statement and branch coverage</td><td>98%</td></tr>
     <tr><td>Lint and formatting</td><td>clean</td></tr>
-    <tr><td>Data pack modified</td><td>no, asserted by digest and by <code>git diff</code></td></tr>
-    <tr><td>Report determinism</td><td>two runs produce byte-identical JSON</td></tr>
+    <tr><td>Data pack modified</td><td>no, asserted by digest, by <code>git diff</code>, and by <code>data/** -text</code> in <code>.gitattributes</code></td></tr>
+    <tr><td>Report determinism</td><td>two runs produce byte-identical JSON, with LF endings on every platform</td></tr>
+    <tr><td><code>/actions</code> determinism</td><td>two calls produce identical responses</td></tr>
+    <tr><td>Concurrent <code>/actions</code> requests</td><td>16 in parallel return identical bodies; each request gets its own cursor</td></tr>
+    <tr><td>Live LLM key required by any test</td><td>none</td></tr>
   </tbody>
 </table>
 </div>
 <p>
   The suite verifies the failure paths too, not only the happy path: a wrong row count, a
-  missing table and a failed reconciliation item each produce a gate failure.
+  missing table and a failed reconciliation item each produce a gate failure; an unresolvable
+  scope returns an empty list rather than a guess; and a service with no warehouse reports
+  <code>degraded</code> rather than pretending to be healthy.
 </p>
 
 </div>
