@@ -37,6 +37,12 @@ RATES: dict[str, RateCard] = {
     "gemini-2.5-flash": RateCard(0.30, 2.50),
     "gemini-2.5-flash-lite": RateCard(0.10, 0.40),
     "gemini-2.5-pro": RateCard(1.25, 10.00),
+    # Carded because they are the models a call falls back to (`LLM_FALLBACK_MODELS`), and a
+    # request answered by a fallback must price against that model's own card rather than
+    # the primary's — otherwise a degraded run reports a cost it did not incur. Text rates;
+    # this service sends nothing but text, and the audio rates on the same page are higher.
+    "gemini-3.1-flash-lite": RateCard(0.25, 1.50),
+    "gemini-3.5-flash": RateCard(1.50, 9.00),
     "gpt-4o-mini": RateCard(0.15, 0.60),
     "gpt-4o": RateCard(2.50, 10.00),
 }

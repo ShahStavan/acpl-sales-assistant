@@ -16,6 +16,7 @@ import pytest
 
 from acpl_assistant.config import Settings
 from acpl_assistant.llm import client as client_module
+from acpl_assistant.llm.breaker import CircuitBreaker
 from acpl_assistant.llm.client import (
     MAX_ATTEMPTS,
     PROVIDER_BASE_URLS,
@@ -34,13 +35,21 @@ KEY = "test-key-not-a-real-one"
 
 
 def settings(**overrides: Any) -> Settings:
-    """Settings with a key present, so the no-key branch is only taken deliberately."""
+    """Settings with a key present, so the no-key branch is only taken deliberately.
+
+    Every field the client reads is pinned, the chain included. ``Settings`` falls back to
+    the repository's own ``.env``, so a field left unset here would make these tests assert
+    against whatever chain the operator happens to have configured.
+    """
     base: dict[str, Any] = {
         "LLM_API_KEY": KEY,
         "LLM_PROVIDER": "gemini",
         "LLM_MODEL": "gemini-2.5-flash",
         "LLM_BASE_URL": "",
         "LLM_TIMEOUT_S": 5,
+        "LLM_FALLBACK_MODELS": "",
+        "LLM_BREAKER_THRESHOLD": 2,
+        "LLM_BREAKER_COOLDOWN_S": 300,
     }
     return Settings(**{**base, **overrides})
 
@@ -53,9 +62,17 @@ def completion(content: str, usage: dict[str, int] | None = None) -> dict[str, A
     }
 
 
-def make_client(handler: Any, **overrides: Any) -> LLMClient:
+def make_client(handler: Any, breaker: CircuitBreaker | None = None, **overrides: Any) -> LLMClient:
     """A client whose every request is answered by *handler*."""
-    return LLMClient(settings(**overrides), transport=httpx.MockTransport(handler))
+    return LLMClient(settings(**overrides), transport=httpx.MockTransport(handler), breaker=breaker)
+
+
+CHAIN = {"LLM_FALLBACK_MODELS": "gemini-2.5-flash-lite,gemini-3.1-flash-lite"}
+
+
+def models_of(requests: list[httpx.Request]) -> list[str]:
+    """The model id each captured request was addressed to, in order."""
+    return [json.loads(r.content)["model"] for r in requests]
 
 
 def call(client: LLMClient) -> Any:
@@ -274,3 +291,227 @@ class TestUsage:
         instance = make_client(lambda request: httpx.Response(200, json=completion("{}")))
         instance.close()
         assert instance._client.is_closed
+
+
+# ---------------------------------------------------------------------------
+# The model chain
+# ---------------------------------------------------------------------------
+
+
+class TestChain:
+    def test_without_fallbacks_the_chain_is_the_one_model(self) -> None:
+        instance = make_client(lambda r: httpx.Response(200, json=completion("{}")))
+        assert instance.models == ("gemini-2.5-flash",)
+        assert instance.fallback_models == ()
+
+    def test_the_chain_is_the_primary_then_each_fallback_in_order(self) -> None:
+        instance = make_client(lambda r: httpx.Response(200, json=completion("{}")), **CHAIN)
+        assert instance.models == (
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-3.1-flash-lite",
+        )
+        assert instance.fallback_models == ("gemini-2.5-flash-lite", "gemini-3.1-flash-lite")
+
+    def test_a_fallback_list_repeating_the_primary_does_not_try_it_twice(self) -> None:
+        instance = make_client(
+            lambda r: httpx.Response(200, json=completion("{}")),
+            LLM_FALLBACK_MODELS="gemini-2.5-flash, gemini-2.5-flash-lite ,",
+        )
+        assert instance.models == ("gemini-2.5-flash", "gemini-2.5-flash-lite")
+
+    def test_a_healthy_primary_is_the_only_model_called(self) -> None:
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json=completion('{"intent": "Q1"}'))
+
+        assert call(make_client(handler, **CHAIN)).data == {"intent": "Q1"}
+        assert models_of(seen) == ["gemini-2.5-flash"]
+
+
+# ---------------------------------------------------------------------------
+# Falling back
+# ---------------------------------------------------------------------------
+
+
+class TestFallback:
+    @pytest.mark.parametrize("status", [429, 503, 500, 502, 404])
+    def test_a_model_that_reports_itself_unavailable_is_stepped_over(self, status: int) -> None:
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            if len(seen) == 1:
+                return httpx.Response(status)
+            return httpx.Response(200, json=completion('{"intent": "Q3"}'))
+
+        result = call(make_client(handler, **CHAIN))
+        assert result.data == {"intent": "Q3"}
+        assert models_of(seen) == ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+
+    def test_a_timeout_on_the_primary_falls_back(self) -> None:
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            if len(seen) == 1:
+                raise httpx.ReadTimeout("too slow", request=request)
+            return httpx.Response(200, json=completion("{}"))
+
+        call(make_client(handler, **CHAIN))
+        assert models_of(seen) == ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+
+    def test_it_walks_the_whole_chain_before_giving_up(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(client_module.time, "sleep", lambda _: None)
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(429)
+
+        with pytest.raises(LLMError) as caught:
+            call(make_client(handler, **CHAIN))
+        assert caught.value.reason == "provider_rate_limited"
+        # One attempt each on the models that still have somewhere to fall back to, and the
+        # full retry budget only on the last.
+        assert models_of(seen) == [
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+            *["gemini-3.1-flash-lite"] * MAX_ATTEMPTS,
+        ]
+
+    def test_backoff_is_not_spent_while_a_fallback_remains(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Sleeping costs the caller seconds; stepping to the next model costs nothing."""
+        slept: list[float] = []
+        monkeypatch.setattr(client_module.time, "sleep", slept.append)
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if json.loads(request.content)["model"] == "gemini-2.5-flash":
+                return httpx.Response(429)
+            return httpx.Response(200, json=completion("{}"))
+
+        call(make_client(handler, **CHAIN))
+        assert slept == []
+
+    @pytest.mark.parametrize("status", [400, 401, 403])
+    def test_a_request_fault_is_never_re_asked_of_another_model(self, status: int) -> None:
+        """Every model shares the key and the payload shape, so all three would refuse."""
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(status)
+
+        with pytest.raises(LLMError) as caught:
+            call(make_client(handler, **CHAIN))
+        assert caught.value.reason == "provider_error"
+        assert models_of(seen) == ["gemini-2.5-flash"]
+
+    def test_a_malformed_body_is_not_re_asked_of_another_model(self) -> None:
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json=completion("not json at all"))
+
+        with pytest.raises(LLMError):
+            call(make_client(handler, **CHAIN))
+        assert models_of(seen) == ["gemini-2.5-flash"]
+
+    def test_a_missing_key_fails_before_any_model_is_tried(self) -> None:
+        def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
+            raise AssertionError("the client must not send a keyless request")
+
+        with pytest.raises(LLMError) as caught:
+            call(make_client(handler, LLM_API_KEY=" ", **CHAIN))
+        assert caught.value.reason == "no_provider_key"
+
+
+# ---------------------------------------------------------------------------
+# Pricing a degraded call
+# ---------------------------------------------------------------------------
+
+
+class TestFallbackPricing:
+    def test_the_answer_is_priced_against_the_model_that_served_it(self) -> None:
+        """A run that fell back must not report the primary's rate card."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if json.loads(request.content)["model"] == "gemini-2.5-flash":
+                return httpx.Response(429)
+            return httpx.Response(200, json=completion("{}"))
+
+        result = call(make_client(handler, **CHAIN))
+        assert result.model == "gemini-2.5-flash-lite"
+        # 800 in at $0.10/Mtok + 40 out at $0.40/Mtok, not flash's $0.30 / $2.50.
+        assert result.cost_usd == pytest.approx((800 * 0.10 + 40 * 0.40) / 1_000_000)
+
+
+# ---------------------------------------------------------------------------
+# The circuit breaker, through the client
+# ---------------------------------------------------------------------------
+
+
+class TestBreaker:
+    def test_a_model_that_keeps_failing_stops_being_called(self) -> None:
+        """The point of the breaker: an exhausted daily quota is learned once, not once
+        per question."""
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            if json.loads(request.content)["model"] == "gemini-2.5-flash":
+                return httpx.Response(429)
+            return httpx.Response(200, json=completion("{}"))
+
+        instance = make_client(handler, breaker=CircuitBreaker(threshold=2), **CHAIN)
+        for _ in range(4):
+            call(instance)
+
+        primary = [m for m in models_of(seen) if m == "gemini-2.5-flash"]
+        assert len(primary) == 2, "the third question skipped the model the first two proved down"
+        assert instance.degraded_models == ["gemini-2.5-flash"]
+
+    def test_a_success_clears_the_history_before_the_breaker_opens(self) -> None:
+        state = {"fail": True}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            if json.loads(request.content)["model"] == "gemini-2.5-flash" and state["fail"]:
+                state["fail"] = False
+                return httpx.Response(429)
+            return httpx.Response(200, json=completion("{}"))
+
+        instance = make_client(handler, breaker=CircuitBreaker(threshold=2), **CHAIN)
+        call(instance)  # primary 429s once, falls back
+        call(instance)  # primary succeeds, clearing the run
+        assert instance.degraded_models == []
+
+    def test_a_chain_with_every_breaker_open_still_tries_one_model(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A cooldown must not become the outage: the probe is what closes it again."""
+        monkeypatch.setattr(client_module.time, "sleep", lambda _: None)
+        breaker = CircuitBreaker(threshold=1)
+        for model in ("gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite"):
+            breaker.record_failure(model)
+
+        seen: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen.append(request)
+            return httpx.Response(200, json=completion('{"intent": "Q8"}'))
+
+        result = call(make_client(handler, breaker=breaker, **CHAIN))
+        assert result.data == {"intent": "Q8"}
+        assert models_of(seen) == ["gemini-2.5-flash"]
+        assert breaker.open_models() == sorted(["gemini-2.5-flash-lite", "gemini-3.1-flash-lite"])
+
+    def test_degraded_models_is_empty_on_a_healthy_client(self) -> None:
+        instance = make_client(lambda r: httpx.Response(200, json=completion("{}")), **CHAIN)
+        assert instance.degraded_models == []

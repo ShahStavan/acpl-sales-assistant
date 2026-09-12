@@ -19,6 +19,9 @@ _ENV_KEYS = [
     "LLM_API_KEY",
     "LLM_BASE_URL",
     "LLM_TIMEOUT_S",
+    "LLM_FALLBACK_MODELS",
+    "LLM_BREAKER_THRESHOLD",
+    "LLM_BREAKER_COOLDOWN_S",
 ]
 
 
@@ -49,6 +52,35 @@ def test_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert s.LLM_API_KEY == ""
     assert s.LLM_BASE_URL == ""
     assert s.LLM_TIMEOUT_S == 30
+    assert s.LLM_FALLBACK_MODELS == ""
+    assert s.LLM_BREAKER_THRESHOLD == 2
+    assert s.LLM_BREAKER_COOLDOWN_S == 300
+
+
+def test_the_chain_is_the_primary_alone_when_no_fallback_is_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _clean_env(monkeypatch)
+    assert Settings().llm_model_chain == ("gemini-2.5-flash",)
+
+
+def test_the_chain_follows_the_configured_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clean_env(monkeypatch)
+    monkeypatch.setenv("LLM_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("LLM_FALLBACK_MODELS", "gemini-2.5-flash-lite, gemini-3.1-flash-lite")
+    assert Settings().llm_model_chain == (
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-3.1-flash-lite",
+    )
+
+
+def test_the_chain_drops_blanks_and_repeats(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A list that names the primary again must not make an exhausted model be tried twice."""
+    _clean_env(monkeypatch)
+    monkeypatch.setenv("LLM_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("LLM_FALLBACK_MODELS", " , gemini-2.5-flash ,gemini-3.1-flash-lite,, ")
+    assert Settings().llm_model_chain == ("gemini-2.5-flash", "gemini-3.1-flash-lite")
 
 
 def test_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
