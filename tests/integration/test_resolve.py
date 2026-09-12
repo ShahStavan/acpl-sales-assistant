@@ -131,6 +131,60 @@ class TestTwoPeriods:
         assert [p.label for p in parse_periods("Q4 versus 2019-03")] == ["FY26 Q4"]
 
 
+class TestMonthRanges:
+    """ "April to June" is one stretch of three months, not April set against June."""
+
+    @pytest.mark.parametrize(
+        "question",
+        [
+            "Beverages in the West from April to June",
+            "Beverages in the West, April-June",
+            "Beverages in the West between April and June",
+            "Beverages in the West April through June",
+        ],
+    )
+    def test_a_range_spans_every_month_it_covers(self, question: str) -> None:
+        parsed = parse_period(question)
+        assert parsed.period is not None
+        assert parsed.period.months == ("2026-04", "2026-05", "2026-06")
+
+    def test_a_range_is_one_period_not_two_compared_ones(self) -> None:
+        found = parse_periods("total sales from April to June")
+        assert [p.label for p in found] == ["FY26 Q4"]
+
+    def test_a_span_that_is_a_quarter_is_named_as_one(self) -> None:
+        """April to June *is* FY26 Q4, and saying so is what the reader can check."""
+        assert parse_period("sales from April to June").period.label == "FY26 Q4"
+        assert parse_period("sales from July through June").period.label == "FY26"
+        assert parse_period("sales from July to December").period.label == "FY26 H1"
+
+    @pytest.mark.parametrize(
+        "question",
+        [
+            "How did Beverages move from April to June?",
+            "How did Beverages change from April to June?",
+            "Compare Beverages between April and June",
+            "Why did Beverages grow from April to June?",
+        ],
+    )
+    def test_comparison_language_keeps_the_two_ends_apart(self, question: str) -> None:
+        """A question about what *changed* wants two points, not the stretch between them."""
+        assert [p.label for p in parse_periods(question)] == ["2026-04", "2026-06"]
+
+    def test_two_months_merely_mentioned_are_not_a_range(self) -> None:
+        """Without "between", an "and" joins two clauses far more often than two dates."""
+        found = parse_periods("Beverages in April and Snacks in June")
+        assert [p.label for p in found] == ["2026-04", "2026-06"]
+
+    def test_a_backwards_range_is_left_to_the_single_month_branch(self) -> None:
+        assert parse_period("June to April").period.months == ("2026-06",)
+
+    def test_a_range_reaching_outside_the_year_is_refused(self) -> None:
+        parsed = parse_period("sales from May 2024 to June")
+        assert parsed.period is None
+        assert parsed.out_of_period == "2024-05"
+
+
 # ---------------------------------------------------------------------------
 # Entities
 # ---------------------------------------------------------------------------

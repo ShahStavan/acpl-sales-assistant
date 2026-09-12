@@ -242,6 +242,29 @@ _FY = re.compile(r"\bfy\s*-?\s*(\d{2,4})\b", re.IGNORECASE)
 _BARE_YEAR = re.compile(r"\b(19|20)\d\d\b")
 _HALF = re.compile(r"\bh([12])\b(?:\s*fy\s*\d{2,4})?", re.IGNORECASE)
 
+# Two month names joined into one stretch of time: "April to June", "April-June",
+# "between April and June". ``and`` only counts when "between" introduced it, or every
+# "Beverages in April and Snacks in June" would collapse into a range nobody asked for.
+_MONTH_RANGE = re.compile(
+    rf"\b(?P<between>between\s+)?(?P<start>{_MONTH_WORDS})\b[\s,]*"
+    rf"(?P<start_year>(?:19|20)\d\d)?\s*"
+    rf"(?P<join>to|through|thru|till|until|and|[-–—])\s*"
+    rf"(?P<end>{_MONTH_WORDS})\b[\s,]*(?P<end_year>(?:19|20)\d\d)?",
+    re.IGNORECASE,
+)
+
+# Language that makes two named periods two things being contrasted rather than the ends of
+# one stretch. "Sales from April to June" wants April, May and June added up; "how did sales
+# move from April to June" wants April set against June, and collapsing that into a span
+# would silently answer a different question. The verbs sit alongside the comparison words
+# because in this domain they do the same work: they ask what changed between two points.
+_COMPARISON_LANGUAGE = re.compile(
+    r"\b(compare[ds]?|comparing|comparison|versus|vs\.?|change[ds]?|move[ds]?|moving|"
+    r"grow|grew|growth|declin(?:e[ds]?|ing)|drop(?:ped|s)?|fell|fall|rose|rise|risen|"
+    r"improve[ds]?|increase[ds]?|decrease[ds]?|happened)\b",
+    re.IGNORECASE,
+)
+
 
 @dataclass(frozen=True)
 class Period:
@@ -305,7 +328,68 @@ class PeriodParse:
     """What was named that FY26 does not cover, ready to quote in the refusal."""
 
 
-def parse_period(question: str) -> PeriodParse:  # noqa: PLR0911
+def _span_label(months: tuple[str, ...]) -> str:
+    """Name a stretch of months the way a reader would.
+
+    A span that happens to be exactly a quarter, a half or the whole year is called that:
+    April to June *is* FY26 Q4, and a reader checking the answer against a calendar should
+    not have to work that out. Anything else is named by its two ends.
+    """
+    if months == ALL_MONTHS:
+        return "FY26"
+    if months == ALL_MONTHS[:6]:
+        return "FY26 H1"
+    if months == ALL_MONTHS[6:]:
+        return "FY26 H2"
+    for number, quarter in FISCAL_QUARTERS.items():
+        if months == quarter:
+            return f"FY26 Q{number}"
+    if len(months) == 1:
+        return months[0]
+    return f"{months[0]} to {months[-1]}"
+
+
+def parse_month_range(question: str) -> PeriodParse | None:
+    """Read "April to June" as the one stretch it names, or ``None`` if it names none.
+
+    ``None`` — rather than a refusal — when the question holds no month range at all, when
+    the two months are being contrasted rather than spanned, or when they run backwards
+    through the fiscal year. Each of those is a question some other branch of
+    :func:`parse_period` already reads correctly, and a half-understood range must not take
+    it over. A range with one end outside FY26 is the exception: that is a refusal, because
+    the question asked for months this warehouse does not hold.
+    """
+    if _COMPARISON_LANGUAGE.search(question):
+        return None
+    match = _MONTH_RANGE.search(question)
+    if match is None:
+        return None
+    if match.group("join").casefold() == "and" and not match.group("between"):
+        return None
+
+    ends: list[str] = []
+    for month_group, year_group in (("start", "start_year"), ("end", "end_year")):
+        number = _MONTH_NUMBERS[match.group(month_group).casefold()]
+        raw_year = match.group(year_group)
+        year = int(raw_year) if raw_year else _fy_year_for_month(number)
+        ends.append(f"{year:04d}-{number:02d}")
+    first, last = ends
+
+    outside = next((key for key in ends if key not in ALL_MONTHS), "")
+    if outside:
+        return PeriodParse(out_of_period=outside)
+
+    start, end = ALL_MONTHS.index(first), ALL_MONTHS.index(last)
+    if start > end:
+        # "June to April" reads as a range written backwards, but it is just as likely to be
+        # two months mentioned in passing. Declining to guess leaves the existing single-month
+        # branch to answer it, which is the conservative reading.
+        return None
+    months = ALL_MONTHS[start : end + 1]
+    return PeriodParse(period=Period(label=_span_label(months), months=months))
+
+
+def parse_period(question: str) -> PeriodParse:  # noqa: PLR0911, PLR0912
     """Read the period a question refers to, anchored to the latest data week.
 
     Returns the full fiscal year when nothing temporal is named: a question with no period
@@ -349,6 +433,11 @@ def parse_period(question: str) -> PeriodParse:  # noqa: PLR0911
         number = int(half.group(1))
         months = ALL_MONTHS[:6] if number == 1 else ALL_MONTHS[6:]
         return PeriodParse(period=Period(label=f"FY26 H{number}", months=months))
+
+    # --- month ranges, before a single month claims only the first end ------
+    ranged = parse_month_range(question)
+    if ranged is not None:
+        return ranged
 
     # --- named months -------------------------------------------------------
     named = _MONTH_YEAR.search(question)
@@ -396,6 +485,13 @@ def parse_periods(question: str) -> list[Period]:
     than refused; :func:`parse_period` has already refused the question if the *first*
     period named is outside FY26.
     """
+    ranged = parse_month_range(question)
+    if ranged is not None and ranged.period is not None:
+        # A span is one period, not two. Returning both ends here would have the pipeline
+        # read "sales from April to June" as April set against June — the very reading the
+        # range parser exists to rule out.
+        return [ranged.period]
+
     found: list[Period] = []
 
     def add(period: Period) -> None:
