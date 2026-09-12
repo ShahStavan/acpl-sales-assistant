@@ -1,0 +1,73 @@
+{
+  "source_rows": {
+    "fact_primary_sales": 74880,
+    "fact_targets": 720,
+    "stockouts": 520,
+    "promotions": 40,
+    "dim_sku": 120,
+    "dim_geo": 12,
+    "dim_distributor": 40,
+    "documents": 6,
+    "playbook": 8
+  },
+  "warehouse_rows": {
+    "dim_sku": 120,
+    "dim_geo": 12,
+    "dim_distributor": 40,
+    "fact_primary_sales": 74880,
+    "fact_targets": 720,
+    "stockouts": 520,
+    "promotions": 40,
+    "documents": 6,
+    "playbook": 8,
+    "sales_by_brand_region_week": 3120,
+    "sales_by_brand_region_month": 720,
+    "v_achievement": 720
+  },
+  "national_fy26_primary_sales_value_inr": 1357631078.74,
+  "reconciliation": [
+    {
+      "item": 1,
+      "title": "SKU-key harmonisation to sku_code",
+      "detail": "0 orphans across all fact tables (120 master SKUs)",
+      "passed": true
+    },
+    {
+      "item": 2,
+      "title": "Targets column-name harmonisation",
+      "detail": "720 rows renamed, month → str",
+      "passed": true
+    },
+    {
+      "item": 3,
+      "title": "Stockouts region derivation",
+      "detail": "0 conflict(s) across 520 rows — derived via distributor_id → territory_code → dim_geo",
+      "passed": true
+    },
+    {
+      "item": 4,
+      "title": "Explicit per-source date formats kept",
+      "detail": "All date columns already datetime64 — no re-parse",
+      "passed": true
+    },
+    {
+      "item": 5,
+      "title": "Grain roll-up to brand × region × month",
+      "detail": "720 cells matched, 0 orphans",
+      "passed": true
+    },
+    {
+      "item": 6,
+      "title": "Promotion-to-sales window matching",
+      "detail": "40 matched, 39 measurable",
+      "passed": true
+    },
+    {
+      "item": 7,
+      "title": "Playbook threshold parsing",
+      "detail": "8 rules parsed",
+      "passed": true
+    }
+  ],
+  "all_reconciliation_passed": true
+}

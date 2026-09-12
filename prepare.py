@@ -7,4 +7,4 @@ knowing the package layout. Equivalent to the ``acpl-prepare`` console script.
 from acpl_assistant.prepare.cli import main
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
