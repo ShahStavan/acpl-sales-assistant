@@ -22,6 +22,7 @@ from acpl_assistant.llm.client import (
     PROVIDER_BASE_URLS,
     LLMClient,
     LLMError,
+    reasoning_effort_for,
 )
 
 SCHEMA: dict[str, Any] = {
@@ -121,6 +122,47 @@ class TestRequest:
         assert result.data == {"intent": "Q1"}
         assert result.usage.prompt_tokens == 800
         assert result.cost_usd > 0
+
+    @pytest.mark.parametrize(
+        ("model", "expected"),
+        [
+            ("gemini-2.5-flash", "none"),
+            ("gemini-2.5-flash-lite", "none"),
+            ("gemini-2.5-pro", "minimal"),
+            ("gemini-3.1-flash-lite", "minimal"),
+            ("gemini-3.5-flash", "minimal"),
+            ("gemini-3.5-flash-lite", "minimal"),
+            ("gemini-3.6-flash", "minimal"),
+            ("gpt-4o-mini", "minimal"),
+            ("something-nobody-has-carded", "minimal"),
+        ],
+    )
+    def test_the_reasoning_floor_is_the_one_each_model_accepts(
+        self, model: str, expected: str
+    ) -> None:
+        """Only the 2.5 family (Pro excepted) takes ``none``; a 3.x model 400s on it."""
+        assert reasoning_effort_for(model) == expected
+
+    def test_each_model_in_a_chain_is_asked_at_its_own_floor(self) -> None:
+        """The floor travels with the model, not with the client.
+
+        A chain that mixes generations sends ``none`` to the 2.5 primary and ``minimal`` to
+        the 3.x fallback. Sending one value to both is how the fallback used to turn a
+        rate-limited primary into a 400 — a rejected request, which the client correctly
+        refuses to fall back on, so the whole chain died on the second model.
+        """
+        seen: list[tuple[str, str]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            body = json.loads(request.content)
+            seen.append((body["model"], body["reasoning_effort"]))
+            if body["model"] == "gemini-2.5-flash":
+                return httpx.Response(429)
+            return httpx.Response(200, json=completion('{"intent": "Q1"}'))
+
+        result = call(make_client(handler, LLM_FALLBACK_MODELS="gemini-3.5-flash"))
+        assert seen == [("gemini-2.5-flash", "none"), ("gemini-3.5-flash", "minimal")]
+        assert result.model == "gemini-3.5-flash"
 
     def test_the_schema_travels_by_name(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:

@@ -66,10 +66,37 @@ RETRY_MAX_DELAY_S = 30.0
 FALLBACK_REASONS = frozenset({"provider_rate_limited", "provider_timeout"})
 
 # Both calls are narrow, schema-bound classification and rendering tasks: neither benefits
-# from a reasoning budget, and disabling it makes `usage` exact rather than leaving hidden
+# from a reasoning budget, and holding it down makes `usage` exact rather than leaving hidden
 # thinking tokens out of `completion_tokens` (they are billed as output).
-REASONING_EFFORT = "none"
+#
+# The value is per model because the provider does not accept one. Google's compatibility
+# layer documents that "reasoning cannot be turned off for Gemini 2.5 Pro or 3 models": only
+# the 2.5 family (Pro excepted) takes ``none``, and a 3.x model answers it with a flat 400 —
+# not a fallback-worthy fault but a rejected request, so a chain that mixes generations would
+# fail on the model rather than on the question. ``minimal`` is the floor everywhere else,
+# and it is measurably the same floor: on every 3.x model in the chain a ``minimal`` call
+# reports the same token total a ``none`` call does. The distinction is not cosmetic on
+# 2.5 though, where ``minimal`` leaves ~44 hidden thinking tokens in the total that ``none``
+# removes, so neither value can simply replace the other.
+#
+# Verified against the live endpoint on 2026-09-12.
+REASONING_EFFORT_NONE = "none"
+REASONING_EFFORT_MINIMAL = "minimal"
 TEMPERATURE = 0.0
+
+
+def reasoning_effort_for(model: str) -> str:
+    """The lowest reasoning setting *model* actually accepts.
+
+    ``none`` for the Gemini 2.5 family, which can switch thinking off outright; ``minimal``
+    for everything else, including every Gemini 3.x model and 2.5 Pro. An unrecognised model
+    gets ``minimal``, because that is the value the whole catalogue accepts: guessing ``none``
+    for an unknown id would turn a new fallback into a 400 on its first call.
+    """
+    name = model.strip().casefold()
+    if name.startswith("gemini-2.5") and "pro" not in name:
+        return REASONING_EFFORT_NONE
+    return REASONING_EFFORT_MINIMAL
 
 
 class LLMError(Exception):
@@ -303,7 +330,7 @@ class LLMClient:
             "model": model,
             "messages": messages,
             "temperature": TEMPERATURE,
-            "reasoning_effort": REASONING_EFFORT,
+            "reasoning_effort": reasoning_effort_for(model),
             "max_tokens": max_tokens,
             "response_format": {
                 "type": "json_schema",
