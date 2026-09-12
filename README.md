@@ -20,12 +20,14 @@ playbook rule evaluated in code. `POST /actions` calls no model at all.
 |---|---|
 | `POST /actions` | **Serving.** All eight playbook rules, approval gating, ranked output |
 | `GET /health` | **Serving.** |
-| `POST /ask` | Not yet registered — the pipeline is the next phase. The route returns 404 rather than a stub, because a stubbed `NO_ANSWER` would be indistinguishable from a real refusal and would corrupt the first accuracy measurement |
+| `POST /ask` | **Serving.** Guard, resolve, route, execute, compose, verify — two model calls, every figure from SQL |
 
 ## Prerequisites
 
 - Python 3.11 or newer
 - No API key is needed for data preparation or for `/actions`; the engine is code only
+- `POST /ask` needs one: set `LLM_API_KEY` in `.env`. Without it every question returns
+  `NO_ANSWER` with reason `no_provider_key` — never a 500, and never a figure
 
 ## Install
 
@@ -180,9 +182,145 @@ reachability claim — `/actions` needs no provider at all.
 
 ## `POST /ask`
 
-Not yet served. The contract, the question taxonomy, the refusal classes and the cost and
-latency reporting are specified in [DESIGN.md §3](DESIGN.md) and Appendix A; the pricing
-table lands with the implementation.
+One natural-language question about FY26, answered from SQL results, or refused with the
+reason it could not be.
+
+**Request**
+
+```json
+{ "question": "Where are we losing most against target this quarter?" }
+```
+
+**Response**
+
+```json
+{
+  "answer": "Aqualite in West is the largest shortfall in FY26 Q4, at INR 1912659 against target. SparkClean in South follows at INR 390070.",
+  "status": "OK",
+  "reason": null,
+  "intent": "Q1",
+  "evidence": [
+    { "source_file": "fact_primary_sales.csv + fact_targets.csv", "brand": "Aqualite", "region": "West", "period": "FY26 Q4", "actual_value_inr": 3120341, "target_value_inr": 5033000, "gap_value_inr": 1912659, "achievement_ratio": 0.62, "achievement_pct": 62 }
+  ],
+  "cost_usd": 0.000712,
+  "latency_ms": 2841.3,
+  "timings_ms": { "guard": 0.1, "resolve": 12.4, "route": 1103.8, "execute": 31.2, "compose": 1691.0, "verify": 0.3 }
+}
+```
+
+`answer`, `status`, `evidence`, `cost_usd` and `latency_ms` are the contract. `intent`,
+`timings_ms` and `reason` are **extra fields** beyond it.
+
+### The pipeline
+
+Six stages, of which two call a model. Any of the four code stages can end the request on
+its own, which is the point: a refusal decided before the router costs nothing.
+
+| Stage | What it does | Can refuse with |
+|---|---|---|
+| `guard` | Screens input aimed at the system rather than the data | `blocked_input` |
+| `resolve` | Matches entities and the period against the warehouse's own vocabularies | `unknown_entity`, `out_of_period`, `unsupported_metric` |
+| `route` | **Model call 1.** Picks one of eight question families and the query shape | `no_route` |
+| `execute` | Runs the family's parameterised SQL. **Every figure in the response originates here** | `no_route`, `no_rows` |
+| `compose` | **Model call 2.** Writes prose from the evidence rows and nothing else | — |
+| `verify` | Checks the premise, then every numeral in the prose against the rows | `false_premise`, `ungrounded_figure` |
+
+The router never sees a figure, never names an entity and never picks a period — those were
+resolved from the data before it was called. It returns one JSON object inside a closed
+schema, and every field is re-checked against the intent catalogue on this side of the wire.
+
+### The eight question families
+
+| Family | Answers |
+|---|---|
+| Q1 | Target versus actual, ranked by the size of the gap |
+| Q2 | Sales within one period, ranked by value or units |
+| Q3 | One period against another, with the change between them |
+| Q4 | Stock-outs, by distributor, SKU, brand or region |
+| Q5 | Promotion uplift against the four weeks before each promotion |
+| Q6 | What the FY26 documents say about a brand, region or month |
+| Q7 | What to do about it — the playbook, via the same engine as `/actions` |
+| Q8 | What the pack covers: brands, regions, SKUs, periods |
+
+There is **no text-to-SQL**. A question outside these eight has no execution path at all,
+which is what makes the refusal reliable rather than a matter of the model's judgement.
+
+### Refusals
+
+Every outcome is a `200`. `status` is `NO_ANSWER` and `reason` carries a stable token:
+
+| Reason | When |
+|---|---|
+| `blocked_input` | The input is talking to the system rather than about the data |
+| `unknown_entity` | A name the pack does not hold — refused even where the question also named something real |
+| `out_of_period` | Outside July 2025 – June 2026 |
+| `unsupported_metric` | Margin, market share, ROI, a forecast — nothing in the pack derives them |
+| `no_route` | No family fits, or the chosen family cannot narrow by something the question named |
+| `no_rows` | The query is valid and the warehouse holds nothing matching it |
+| `false_premise` | The question assumed a direction of travel the rows contradict |
+| `ungrounded_figure` | The drafted answer stated a number no evidence row supports, so it was withheld |
+| `no_provider_key`, `provider_timeout`, `provider_rate_limited`, `provider_error` | The model could not be reached. The figures are unaffected — retry |
+
+A withheld answer still returns its evidence rows: the rows the answer should have been
+written from are more useful than nothing.
+
+### Grounding
+
+`verify` extracts every numeral from the prose and requires each one to be traceable to an
+evidence row, the resolved period, or something the question itself named. A figure written
+to fewer decimal places than it was computed to still matches — 93 may stand for 92.77,
+because rounding a figure is restating it. Rescaling one is not: "2.2 crore" cannot stand
+for 22002083, since that is arithmetic, and arithmetic belongs in SQL.
+
+### Cost and latency
+
+`cost_usd` is the provider's own reported token usage priced against a committed rate table
+in `llm/pricing.py`. Rates are transcribed from the published price pages with the date each
+was read, and committed rather than fetched — a figure this repository publishes must not
+change because a web page did.
+
+| Model | Input $/Mtok | Output $/Mtok |
+|---|---|---|
+| `gemini-2.5-flash` (default) | 0.30 | 2.50 |
+| `gemini-2.5-flash-lite` | 0.10 | 0.40 |
+| `gemini-2.5-pro` | 1.25 | 10.00 |
+| `gpt-4o-mini` | 0.15 | 0.60 |
+| `gpt-4o` | 2.50 | 10.00 |
+
+A model with no card reports `0.0` and logs one warning — never a guessed rate. Gemini bills
+reasoning tokens as output but reports them only inside `total_tokens`, so output is priced
+at the wider of `completion_tokens` and `total_tokens − prompt_tokens`.
+
+`latency_ms` spans the whole handler on a monotonic clock; `timings_ms` breaks it down by
+stage. A stage entered twice accumulates, so a retried provider call reports the time the
+caller actually waited.
+
+## Evaluation
+
+```bash
+python eval/run_eval.py --base-url http://127.0.0.1:8000
+```
+
+[`eval/questions.yaml`](eval/questions.yaml) holds the labelled set — all eight families,
+every refusal class, with paraphrase variants. **Every expected figure was computed from the
+warehouse with hand-written SQL before the case was written**, never read back out of an
+answer; a case that encodes what the system said measures nothing.
+
+The runner grades the evidence, never the prose: two correct answers can be worded
+differently and neither is more correct for it. A provider outage is reported separately and
+excluded from the denominator — a 429 says nothing about whether the question would have
+been routed correctly. Results are written to `eval/results/`.
+
+`--pace` sets the seconds between questions; the default of 12 keeps the free tier's
+per-minute throttle out of the way, given two calls per question. It does nothing for the
+**daily** cap, which pacing cannot solve — the free allowance for `gemini-2.5-flash` is 20
+requests a day, and a full run needs about 114. Point `LLM_MODEL` at a model with a larger
+free allowance, or use a paid key.
+
+The runner abandons a run after three provider failures in a row (`--max-consecutive-faults`,
+0 to disable). A quota measured per day does not clear part-way through a run, and neither
+does a service that is down; grinding through the rest would spend an hour producing a file
+of skips. Use `--only` to run one family.
 
 ---
 

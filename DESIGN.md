@@ -295,7 +295,7 @@ erDiagram
         string regions "tagged at prep"
         string distributors "tagged at prep"
         string months "tagged at prep"
-        bool load_bearing
+        string months_resolved "FY26 months the tags resolve to"
     }
     PLAYBOOK {
         string rule_id PK
@@ -604,9 +604,14 @@ Full contract and extra fields in [README.md](README.md); models in
 
 | Endpoint | Request | Response | Extra fields |
 |---|---|---|---|
-| `POST /ask` | `{"question"}` | `answer`, `status` (`OK` \| `NO_ANSWER`), `evidence[]`, `cost_usd`, `latency_ms` | `timings_ms`, `intent` |
+| `POST /ask` | `{"question"}` | `answer`, `status` (`OK` \| `NO_ANSWER`), `evidence[]`, `cost_usd`, `latency_ms` | `timings_ms`, `intent`, `reason` |
 | `POST /actions` | `{"scope"}` — region or `all` | `[{finding, rule_id, action, state}]` with `state` ∈ `RECOMMENDED` \| `PENDING_APPROVAL` | `period`, `evidence`, `priority` per item |
 | `GET /health` | — | `{status, warehouse, model}` | — |
+
+`reason` is the field the evaluation set asserts on. The `answer` of a refusal is a sentence
+written for a reader, so scoring against it would be scoring prose; `reason` is a stable
+token naming the refusal class — `unknown_entity`, `no_route`, `ungrounded_figure` — and is
+`null` when `status` is `OK`. The full table is in [README.md](README.md).
 
 ## Appendix B — Module and artefact index
 

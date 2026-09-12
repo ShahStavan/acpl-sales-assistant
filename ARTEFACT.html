@@ -62,9 +62,9 @@
 
 <p class="note">
   <strong>Status.</strong> Sections 1 to 4 are complete and verified. Section 5 is pending: the
-  <code>/ask</code> pipeline and its evaluation are not built yet, so no accuracy, cost or
-  latency figure is claimed. An empty row is stated as empty rather than filled with a
-  placeholder.
+  <code>/ask</code> pipeline is built and served and its labelled set is committed, but the
+  measured run has not happened, so no accuracy, cost or latency figure is claimed. An empty
+  row is stated as empty rather than filled with a placeholder.
 </p>
 
 <h2>1. Rows held from each file after preparation</h2>
@@ -251,15 +251,26 @@
 </table>
 </div>
 
-<h2>5. Evaluation &mdash; pending</h2>
+<h2>5. Evaluation &mdash; not yet run</h2>
 <p>
-  Not yet measurable. The <code>/ask</code> pipeline is not built, so there is no accuracy to
-  report, no gap to have closed, and no cost or latency to have observed.
+  The <code>/ask</code> pipeline is built and served, and the labelled set is committed: 57
+  cases across all eight question families and every refusal class, with paraphrase variants.
+  <strong>Every expected figure in it was computed from the warehouse with hand-written SQL
+  before the case was written</strong> &mdash; a case that encodes what the system said
+  measures nothing &mdash; and every case has been confirmed reachable offline, by driving the
+  executor over the slot combinations the router can produce.
+</p>
+<p>
+  What has not happened is the measured run. These figures stay pending rather than being
+  estimated from the offline check, because that check holds the SQL constant and asks only
+  whether a figure <em>could</em> be reached; the accuracy worth publishing is the one that
+  includes the router's and composer's own judgement.
 </p>
 <div class="scroll">
 <table>
   <thead><tr><th>Figure</th><th>Value</th></tr></thead>
   <tbody>
+    <tr><td>Labelled cases committed</td><td class="num">57</td></tr>
     <tr><td>Accuracy, first measured</td><td class="pending">pending</td></tr>
     <tr><td>Largest gap found</td><td class="pending">pending</td></tr>
     <tr><td>The one change made</td><td class="pending">pending</td></tr>
@@ -280,15 +291,15 @@
 <table>
   <thead><tr><th>Check</th><th>Result</th></tr></thead>
   <tbody>
-    <tr><td>Test suite</td><td>219 passing</td></tr>
-    <tr><td>Integration tests against the real pack and the HTTP app</td><td>76</td></tr>
+    <tr><td>Test suite</td><td>615 passing</td></tr>
+    <tr><td>Integration tests against the real pack and the HTTP app</td><td>262</td></tr>
     <tr><td>Statement and branch coverage</td><td>98%</td></tr>
     <tr><td>Lint and formatting</td><td>clean</td></tr>
     <tr><td>Data pack modified</td><td>no, asserted by digest, by <code>git diff</code>, and by <code>data/** -text</code> in <code>.gitattributes</code></td></tr>
     <tr><td>Report determinism</td><td>two runs produce byte-identical JSON, with LF endings on every platform</td></tr>
     <tr><td><code>/actions</code> determinism</td><td>two calls produce identical responses</td></tr>
     <tr><td>Concurrent <code>/actions</code> requests</td><td>16 in parallel return identical bodies; each request gets its own cursor</td></tr>
-    <tr><td>Live LLM key required by any test</td><td>none</td></tr>
+    <tr><td>Live LLM key required by any test</td><td>none &mdash; the two model calls are exercised through a double, and the provider client through <code>httpx.MockTransport</code></td></tr>
   </tbody>
 </table>
 </div>

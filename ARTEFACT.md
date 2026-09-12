@@ -12,8 +12,9 @@ python prepare.py
 ```
 
 **Status.** Sections 1 to 4 are complete and verified. Section 5 is pending: the `/ask`
-pipeline and its evaluation are not built yet, so no accuracy, cost or latency figure is
-claimed. An empty row is stated as empty rather than filled with a placeholder.
+pipeline is built and served and its labelled set is committed, but the measured run has not
+happened, so no accuracy, cost or latency figure is claimed. An empty row is stated as empty
+rather than filled with a placeholder.
 
 ## 1. Rows held from each file after preparation
 
@@ -128,15 +129,23 @@ week of trading and report uplifts of 63% to 131% instead. A test holds that bou
 | No action is lost or double-counted by scope | The four regions' lists union to exactly the `all` list |
 | The rules engine never calls a model | `actions/` is asserted not to import `llm/`, by scanning the imports rather than trusting the convention |
 
-## 5. Evaluation — pending
+## 5. Evaluation — not yet run
 
-Not yet measurable. The `/ask` pipeline is not built, so there is no accuracy to report, no gap
-to have closed, and no cost or latency to have observed. This section will state first accuracy
-measured, the largest gap found, the single change made to close it, accuracy after that change,
-median cost per question, and p50 and p95 latency.
+The `/ask` pipeline is built and served, and the labelled set is committed: 57 cases across all
+eight question families and every refusal class, with paraphrase variants. **Every expected
+figure in it was computed from the warehouse with hand-written SQL before the case was
+written** — a case that encodes what the system said measures nothing — and every case has been
+confirmed reachable offline, by driving the executor over the slot combinations the router can
+produce.
+
+What has not happened is the measured run. These figures stay `pending` rather than being
+estimated from the offline check, because the offline check holds the SQL constant and asks
+only whether the figure *could* be reached; the accuracy worth publishing is the one that
+includes the router's and composer's own judgement.
 
 | Figure | Value |
 |---|---|
+| Labelled cases committed | 57 |
 | Accuracy, first measured | pending |
 | Largest gap found | pending |
 | The one change made | pending |
@@ -152,15 +161,15 @@ build instead of quietly shifting a figure published here.
 
 | Check | Result |
 |---|---|
-| Test suite | 219 passing |
-| Integration tests against the real pack and the HTTP app | 76 |
+| Test suite | 615 passing |
+| Integration tests against the real pack and the HTTP app | 262 |
 | Statement and branch coverage | 98% |
 | Lint and formatting | clean |
 | Data pack modified | no, asserted by digest, by `git diff`, and by `data/** -text` in `.gitattributes` |
 | Report determinism | two runs produce byte-identical JSON, with LF endings on every platform |
 | `/actions` determinism | two calls produce identical responses |
 | Concurrent `/actions` requests | 16 in parallel return identical bodies; each request gets its own cursor |
-| Live LLM key required by any test | none |
+| Live LLM key required by any test | none — the two model calls are exercised through a double, and the provider client through `httpx.MockTransport` |
 
 The suite verifies the failure paths too, not only the happy path: a wrong row count, a missing
 table and a failed reconciliation item each produce a gate failure; an unresolvable scope
