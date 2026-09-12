@@ -177,7 +177,7 @@ that do carry one.
   "status": "ok",
   "warehouse": "/app/warehouse.duckdb",
   "model": "gemini-2.5-flash",
-  "fallback_models": ["gemini-3.1-flash-lite", "gemini-3.5-flash"],
+  "fallback_models": ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.5-flash"],
   "degraded_models": []
 }
 ```
@@ -289,14 +289,24 @@ for 22002083, since that is arithmetic, and arithmetic belongs in SQL.
 
 One provider, a chain of models: `LLM_MODEL` first, then each entry of `LLM_FALLBACK_MODELS`
 in order. A free-tier daily allowance is counted per *model id*, not per key —
-`gemini-2.5-flash` grants about 20 requests a day and a full evaluation run needs about 114 —
-so the chain is what lets a run finish without a paid key.
+`gemini-2.5-flash` grants about 20 requests a day and a full evaluation run needs up to 86 —
+so the chain is what lets a run finish without a paid key. Both committed runs under
+`eval/results/` prove the point: the primary's allowance ran out 14 calls into the first, and
+the fallback carried the remaining 70 and the whole of the second.
 
 A call steps to the next model only when the failure says the model is unavailable: `429`,
 `503`, a timeout, any `5xx`, or a `404` (the provider does not serve that id). It does **not**
 step across on a `400`, `401`, `403`, or a malformed response body. The chain shares one key,
 one endpoint and one payload shape, so those would be refused identically by every candidate;
 re-asking would spend three round-trips hiding one bug.
+
+Because a `400` is not a fallback-worthy fault, a request field that only some models accept
+would strand the chain on the first model that rejects it. `reasoning_effort` is exactly such
+a field: Google documents that reasoning cannot be turned off for Gemini 2.5 Pro or any 3.x
+model, and those return `400` for `"none"`. The client therefore sends each model the floor it
+accepts — `none` to the 2.5 family, `minimal` to everything else. On 3.x the two are the same
+floor, measured: a `minimal` call reports the same token total a `none` call does. On 2.5 they
+are not, and `none` is the cheaper one, so neither value replaces the other.
 
 Retry backoff is spent only on the last model in the chain. While a candidate remains,
 stepping costs nothing and can still answer; sleeping costs the caller seconds and cannot beat
@@ -311,15 +321,17 @@ still tries one model, so a cooldown can never itself become the outage.
 
 ```
 LLM_MODEL=gemini-2.5-flash
-LLM_FALLBACK_MODELS=gemini-3.1-flash-lite,gemini-3.5-flash
+LLM_FALLBACK_MODELS=gemini-3.1-flash-lite,gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.5-flash
 LLM_BREAKER_THRESHOLD=2        # consecutive faults that open a breaker
 LLM_BREAKER_COOLDOWN_S=300     # how long it stays open; 0 disables skipping
 ```
 
 Leave `LLM_FALLBACK_MODELS` empty for single-model behaviour. Verify a chain before trusting
-it: on a key issued in 2026, `gemini-2.5-flash-lite` returns `404` ("no longer available to
-new users") and `gemini-3.5-flash-lite` rejects this request shape with `400` — the first
-falls back correctly, the second does not, by design.
+it, by calling each id with the shape this service sends. On a key issued in 2026,
+`gemini-2.5-flash-lite` and `gemini-2.5-pro` both return `404` ("no longer available to new
+users"), so neither belongs in a chain; the five ids above were each confirmed to answer, and
+are ordered by list price ascending so a degraded run steps down to the cheapest model that
+can still answer.
 
 ### Cost and latency
 
@@ -334,7 +346,9 @@ change because a web page did.
 | `gemini-2.5-flash-lite` | 0.10 | 0.40 |
 | `gemini-2.5-pro` | 1.25 | 10.00 |
 | `gemini-3.1-flash-lite` | 0.25 | 1.50 |
+| `gemini-3.5-flash-lite` | 0.30 | 2.50 |
 | `gemini-3.5-flash` | 1.50 | 9.00 |
+| `gemini-3.6-flash` | 0.75 | 3.75 |
 | `gpt-4o-mini` | 0.15 | 0.60 |
 | `gpt-4o` | 2.50 | 10.00 |
 
@@ -367,13 +381,16 @@ been routed correctly. Results are written to `eval/results/`.
 `--pace` sets the seconds between questions; the default of 12 keeps the free tier's
 per-minute throttle out of the way, given two calls per question. It does nothing for the
 **daily** cap, which pacing cannot solve — the free allowance for `gemini-2.5-flash` is 20
-requests a day, and a full run needs about 114. Point `LLM_MODEL` at a model with a larger
-free allowance, set `LLM_FALLBACK_MODELS` so the service steps down when the primary runs out,
-or use a paid key.
+requests a day. A full run needs up to 86: of the 57 cases, 14 refuse before a model is
+reached at all, four cost one call and the remaining 39 cost two. Point `LLM_MODEL` at a model
+with a larger free allowance, set `LLM_FALLBACK_MODELS` so the service steps down when the
+primary runs out, or use a paid key.
 
 A run that fell back still measures the system, but a different configuration of it, so the
 summary carries `calls_by_model`. More than one entry means the accuracy figure is not any one
-model's, and the runner prints that alongside it.
+model's, and the runner prints that alongside it. Both committed runs show this in practice —
+the first was served by two models and the second by one — and
+[ARTEFACT.md](ARTEFACT.md) §5 reports the figures with the models that produced them.
 
 The runner abandons a run after three provider failures in a row (`--max-consecutive-faults`,
 0 to disable). A quota measured per day does not clear part-way through a run, and neither
