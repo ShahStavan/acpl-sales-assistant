@@ -11,10 +11,11 @@ Reproduce all of it with one command:
 python prepare.py
 ```
 
-**Status.** Sections 1 to 4 are complete and verified. Section 5 is pending: the `/ask`
-pipeline is built and served and its labelled set is committed, but the measured run has not
-happened, so no accuracy, cost or latency figure is claimed. An empty row is stated as empty
-rather than filled with a placeholder.
+**Status.** All five sections are complete and verified. The evaluation set has been run
+twice against the served HTTP surface: 80.7% first measured, 89.5% after one change, with
+both result files committed under `eval/results/` and both numbers published in section 5.
+Neither figure describes a single model — the free tier's daily cap moved the run onto the
+fallback chain part-way through — and section 5 says which models served which calls.
 
 ## 1. Rows held from each file after preparation
 
@@ -129,29 +130,70 @@ week of trading and report uplifts of 63% to 131% instead. A test holds that bou
 | No action is lost or double-counted by scope | The four regions' lists union to exactly the `all` list |
 | The rules engine never calls a model | `actions/` is asserted not to import `llm/`, by scanning the imports rather than trusting the convention |
 
-## 5. Evaluation — not yet run
+## 5. Evaluation — measured
 
-The `/ask` pipeline is built and served, and the labelled set is committed: 57 cases across all
-eight question families and every refusal class, with paraphrase variants. **Every expected
-figure in it was computed from the warehouse with hand-written SQL before the case was
-written** — a case that encodes what the system said measures nothing — and every case has been
-confirmed reachable offline, by driving the executor over the slot combinations the router can
-produce.
-
-What has not happened is the measured run. These figures stay `pending` rather than being
-estimated from the offline check, because the offline check holds the SQL constant and asks
-only whether the figure *could* be reached; the accuracy worth publishing is the one that
-includes the router's and composer's own judgement.
+57 labelled cases across all eight question families and every refusal class, with paraphrase
+variants. **Every expected figure in it was computed from the warehouse with hand-written SQL
+before the case was written** — a case that encodes what the system said measures nothing.
+The runner posts each question to the running service over HTTP, grades the evidence rather
+than the prose, and excludes provider outages from the denominator instead of scoring them as
+wrong answers.
 
 | Figure | Value |
 |---|---|
 | Labelled cases committed | 57 |
-| Accuracy, first measured | pending |
-| Largest gap found | pending |
-| The one change made | pending |
-| Accuracy after | pending |
-| Median cost per question | pending |
-| Latency p50 / p95 | pending |
+| Accuracy, first measured | **80.7%** (46/57) |
+| Largest gap found | Q3 at 0/5 — every period comparison withheld as `ungrounded_figure` |
+| The one change made | Ground a figure's magnitude, not only its signed value |
+| Accuracy after | **89.5%** (51/57) |
+| Median cost per question | $0.000593 |
+| Latency p50 / p95 | 3391 ms / 5778 ms |
+
+Both runs in full, as committed under `eval/results/`:
+
+| | First run | After the change |
+|---|---|---|
+| Accuracy | 80.7% (46/57) | **89.5%** (51/57) |
+| Provider faults | 0 | 0 |
+| Median cost / question | $0.000593 | $0.000589 |
+| Total cost for the set | $0.0299 | $0.0280 |
+| Latency p50 / p95 | 3391 / 5778 ms | 2901 / 5097 ms |
+| Calls by model | 14 `gemini-2.5-flash`, 70 `gemini-3.1-flash-lite` | 84 `gemini-3.1-flash-lite` |
+
+### The largest gap, and the change it prompted
+
+Q3 — period comparison — failed every one of its five cases, and Q1 two of six. All seven were
+withheld by the verifier as `ungrounded_figure` while the figures were sitting in the evidence
+rows. The verifier extracts numerals with a digit pattern that cannot match a minus sign, so a
+row holding `delta_value_inr: -1985290` could never ground the "1,985,290" an answer writes
+when it says sales *fell* by that much. Every declining comparison and every below-target gap
+failed the check for having stated its figure the way English states it.
+
+The fix grounds a number's magnitude alongside its signed value. It concedes nothing the check
+was protecting — the digits still have to come from a row — because which *direction* they
+point is the premise check's business, and that reads the sign off the column rather than out
+of the prose. Six of the seven cases pass as a result.
+
+### What the accuracy figure describes, exactly
+
+Neither run describes a single model. Gemini's free tier caps requests per day per model, and
+the primary's allowance ran out 14 calls into the first run; the fallback chain carried the
+remaining 70, and the whole of the second run. The runner records calls per model for this
+reason, and the figure should not be read as `gemini-2.5-flash`'s.
+
+One case moved backwards between the runs. `Q1-gap-quarter-01` passed on `gemini-2.5-flash`
+and fails on `gemini-3.1-flash-lite`, which routes it to a coarser dimension and returns
+category rows where the case asserts brand ones. It is the only one of the seven cases the
+primary served before its allowance ran out that changed hands between runs, so that
+regression belongs to the model rather than to the change.
+
+### What still fails, and why it was not the one change
+
+| Cases | Failure | Why it is a different problem |
+|---|---|---|
+| `REFUSE-premise` ×2 | `ungrounded_figure`, expected `false_premise` | "Why did Aqualite grow…" routes to Q6 (documents), so no delta column exists for the premise check to read a direction off. Settling it needs the comparison computed before the premise is judged — a routing change, not a verifier one. |
+| `Q6-untagged`, `Q6-north` | routed to Q8, expected Q6 | The router does not separate "what documents exist" from "what do the documents say". A prompt or schema change, measurable on its own. |
+| `Q1-gap-quarter-01`, `Q3-beverages-west` | evidence missing brand rows | The router chose a coarser dimension than the case asserts. Model-dependent, as the run-to-run diff above shows. |
 
 ## 6. How this was checked
 

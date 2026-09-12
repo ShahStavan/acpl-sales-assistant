@@ -61,10 +61,12 @@
 <pre><code>python prepare.py</code></pre>
 
 <p class="note">
-  <strong>Status.</strong> Sections 1 to 4 are complete and verified. Section 5 is pending: the
-  <code>/ask</code> pipeline is built and served and its labelled set is committed, but the
-  measured run has not happened, so no accuracy, cost or latency figure is claimed. An empty
-  row is stated as empty rather than filled with a placeholder.
+  <strong>Status.</strong> All five sections are complete and verified. The evaluation set has
+  been run twice against the served HTTP surface: 80.7% first measured, 89.5% after one change,
+  with both result files committed under <code>eval/results/</code> and both numbers published
+  in section 5. Neither figure describes a single model &mdash; the free tier's daily cap moved
+  the run onto the fallback chain part-way through &mdash; and section 5 says which models
+  served which calls.
 </p>
 
 <h2>1. Rows held from each file after preparation</h2>
@@ -251,32 +253,85 @@
 </table>
 </div>
 
-<h2>5. Evaluation &mdash; not yet run</h2>
+<h2>5. Evaluation &mdash; measured</h2>
 <p>
-  The <code>/ask</code> pipeline is built and served, and the labelled set is committed: 57
-  cases across all eight question families and every refusal class, with paraphrase variants.
-  <strong>Every expected figure in it was computed from the warehouse with hand-written SQL
-  before the case was written</strong> &mdash; a case that encodes what the system said
-  measures nothing &mdash; and every case has been confirmed reachable offline, by driving the
-  executor over the slot combinations the router can produce.
-</p>
-<p>
-  What has not happened is the measured run. These figures stay pending rather than being
-  estimated from the offline check, because that check holds the SQL constant and asks only
-  whether a figure <em>could</em> be reached; the accuracy worth publishing is the one that
-  includes the router's and composer's own judgement.
+  57 labelled cases across all eight question families and every refusal class, with paraphrase
+  variants. <strong>Every expected figure in it was computed from the warehouse with hand-written
+  SQL before the case was written</strong> &mdash; a case that encodes what the system said
+  measures nothing. The runner posts each question to the running service over HTTP, grades the
+  evidence rather than the prose, and excludes provider outages from the denominator instead of
+  scoring them as wrong answers.
 </p>
 <div class="scroll">
 <table>
   <thead><tr><th>Figure</th><th>Value</th></tr></thead>
   <tbody>
     <tr><td>Labelled cases committed</td><td class="num">57</td></tr>
-    <tr><td>Accuracy, first measured</td><td class="pending">pending</td></tr>
-    <tr><td>Largest gap found</td><td class="pending">pending</td></tr>
-    <tr><td>The one change made</td><td class="pending">pending</td></tr>
-    <tr><td>Accuracy after</td><td class="pending">pending</td></tr>
-    <tr><td>Median cost per question</td><td class="pending">pending</td></tr>
-    <tr><td>Latency p50 / p95</td><td class="pending">pending</td></tr>
+    <tr><td>Accuracy, first measured</td><td class="num"><strong>80.7%</strong> (46/57)</td></tr>
+    <tr><td>Largest gap found</td><td>Q3 at 0/5 &mdash; every period comparison withheld as <code>ungrounded_figure</code></td></tr>
+    <tr><td>The one change made</td><td>Ground a figure's magnitude, not only its signed value</td></tr>
+    <tr><td>Accuracy after</td><td class="num"><strong>89.5%</strong> (51/57)</td></tr>
+    <tr><td>Median cost per question</td><td class="num">$0.000593</td></tr>
+    <tr><td>Latency p50 / p95</td><td class="num">3391 ms / 5778 ms</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Both runs in full, as committed under <code>eval/results/</code>:</p>
+<div class="scroll">
+<table>
+  <thead><tr><th></th><th>First run</th><th>After the change</th></tr></thead>
+  <tbody>
+    <tr><td>Accuracy</td><td class="num">80.7% (46/57)</td><td class="num"><strong>89.5%</strong> (51/57)</td></tr>
+    <tr><td>Provider faults</td><td class="num">0</td><td class="num">0</td></tr>
+    <tr><td>Median cost / question</td><td class="num">$0.000593</td><td class="num">$0.000589</td></tr>
+    <tr><td>Total cost for the set</td><td class="num">$0.0299</td><td class="num">$0.0280</td></tr>
+    <tr><td>Latency p50 / p95</td><td class="num">3391 / 5778 ms</td><td class="num">2901 / 5097 ms</td></tr>
+    <tr><td>Calls by model</td><td>14 <code>gemini-2.5-flash</code>, 70 <code>gemini-3.1-flash-lite</code></td><td>84 <code>gemini-3.1-flash-lite</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>The largest gap, and the change it prompted</h3>
+<p>
+  Q3 &mdash; period comparison &mdash; failed every one of its five cases, and Q1 two of six.
+  All seven were withheld by the verifier as <code>ungrounded_figure</code> while the figures
+  were sitting in the evidence rows. The verifier extracts numerals with a digit pattern that
+  cannot match a minus sign, so a row holding <code>delta_value_inr: -1985290</code> could never
+  ground the "1,985,290" an answer writes when it says sales <em>fell</em> by that much. Every
+  declining comparison and every below-target gap failed the check for having stated its figure
+  the way English states it.
+</p>
+<p>
+  The fix grounds a number's magnitude alongside its signed value. It concedes nothing the check
+  was protecting &mdash; the digits still have to come from a row &mdash; because which
+  <em>direction</em> they point is the premise check's business, and that reads the sign off the
+  column rather than out of the prose. Six of the seven cases pass as a result.
+</p>
+
+<h3>What the accuracy figure describes, exactly</h3>
+<p>
+  Neither run describes a single model. Gemini's free tier caps requests per day per model, and
+  the primary's allowance ran out 14 calls into the first run; the fallback chain carried the
+  remaining 70, and the whole of the second run. The runner records calls per model for this
+  reason, and the figure should not be read as <code>gemini-2.5-flash</code>'s.
+</p>
+<p>
+  One case moved backwards between the runs. <code>Q1-gap-quarter-01</code> passed on
+  <code>gemini-2.5-flash</code> and fails on <code>gemini-3.1-flash-lite</code>, which routes it
+  to a coarser dimension and returns category rows where the case asserts brand ones. It is the
+  only one of the seven cases the primary served before its allowance ran out that changed hands
+  between runs, so that regression belongs to the model rather than to the change.
+</p>
+
+<h3>What still fails, and why it was not the one change</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>Cases</th><th>Failure</th><th>Why it is a different problem</th></tr></thead>
+  <tbody>
+    <tr><td><code>REFUSE-premise</code> &times;2</td><td><code>ungrounded_figure</code>, expected <code>false_premise</code></td><td>"Why did Aqualite grow&hellip;" routes to Q6 (documents), so no delta column exists for the premise check to read a direction off. Settling it needs the comparison computed before the premise is judged &mdash; a routing change, not a verifier one.</td></tr>
+    <tr><td><code>Q6-untagged</code>, <code>Q6-north</code></td><td>routed to Q8, expected Q6</td><td>The router does not separate "what documents exist" from "what do the documents say". A prompt or schema change, measurable on its own.</td></tr>
+    <tr><td><code>Q1-gap-quarter-01</code>, <code>Q3-beverages-west</code></td><td>evidence missing brand rows</td><td>The router chose a coarser dimension than the case asserts. Model-dependent, as the run-to-run diff above shows.</td></tr>
   </tbody>
 </table>
 </div>
