@@ -121,6 +121,16 @@ def build_report(
 
 
 def write_report(report: dict, path: Path) -> None:
-    """Write the preparation report as pretty-printed, stably ordered JSON."""
+    r"""Write the preparation report as pretty-printed, stably ordered JSON.
+
+    The explicit ``newline="\n"`` is not decoration. Without it Python translates newlines to CRLF
+    on Windows, so identical data would produce a different file on a developer's machine
+    than in CI. The report is committed, so that drift shows up as a diff nobody wrote and
+    makes the repository's line-ending hook fail on every preparation run.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )

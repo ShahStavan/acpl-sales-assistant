@@ -157,6 +157,20 @@ class TestCommand:
         second = hashlib.sha256(report_path.read_bytes()).hexdigest()
         assert first == second
 
+    def test_report_is_written_with_lf_on_every_platform(self) -> None:
+        """Determinism across two runs is not enough; it must hold across machines.
+
+        ``write_text`` translates newlines to CRLF on Windows by default, so the same
+        data produced a different committed file on Windows than in CI — a diff nobody
+        wrote, and a line-ending hook that failed on every preparation run. The two runs
+        above agree with each other on either platform and cannot catch it.
+        """
+        report_path = get_settings().acpl_warehouse_resolved.parent / "prep_report.json"
+        assert main([]) == 0
+        raw = report_path.read_bytes()
+        assert b"\r\n" not in raw
+        assert raw.endswith(b"}\n")
+
 
 class TestDataPackUntouched:
     def test_preparation_does_not_modify_the_pack(self, data_dir: Path) -> None:
