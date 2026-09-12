@@ -169,6 +169,7 @@ def _log_request(outcome: AskOutcome, question: str) -> None:
                 "reason": outcome.reason,
                 "intent": outcome.intent,
                 "evidence_rows": len(outcome.evidence),
+                "models": outcome.models,
                 "cost_usd": outcome.cost_usd,
                 "latency_ms": outcome.latency_ms,
                 "timings_ms": outcome.timings_ms,
@@ -210,6 +211,7 @@ def ask(
         latency_ms=outcome.latency_ms,
         timings_ms=outcome.timings_ms,
         intent=outcome.intent,
+        models=outcome.models,
     )
 
 
@@ -234,12 +236,17 @@ def health(
     response: Response,
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> HealthResponse:
-    """Report whether the process can read its warehouse, and which model it is set to use.
+    """Report whether the process can read its warehouse, and which models it may use.
 
-    ``model`` is configuration, not a reachability check: the actions engine needs no
-    provider at all, and ``/ask`` reports a provider failure on the request itself.
+    ``model`` and ``fallback_models`` are configuration, not a reachability check: the
+    actions engine needs no provider at all, and ``/ask`` reports a provider failure on the
+    request itself. ``degraded_models`` is observation — the models whose breaker is open
+    right now — and is empty until a provider call has actually been made, because a
+    process that has served only ``/health`` and ``/actions`` has never built a client and
+    shutting down should not be the first thing that does.
     """
     warehouse = settings.acpl_warehouse_resolved
+    degraded = list(get_client().degraded_models) if get_client.cache_info().currsize else []
     try:
         con = open_warehouse(warehouse).cursor()
         try:
@@ -252,12 +259,16 @@ def health(
             status="degraded",
             warehouse=str(warehouse),
             model=settings.LLM_MODEL,
+            fallback_models=list(settings.llm_model_chain[1:]),
+            degraded_models=degraded,
             detail=f"{WAREHOUSE_MISSING} ({exc.__class__.__name__})",
         )
     return HealthResponse(
         status="ok",
         warehouse=str(warehouse),
         model=settings.LLM_MODEL,
+        fallback_models=list(settings.llm_model_chain[1:]),
+        degraded_models=degraded,
     )
 
 

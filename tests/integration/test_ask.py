@@ -91,6 +91,8 @@ class FakeLLM:
     fail_on: str = ""
     error: LLMError = field(default_factory=lambda: LLMError("provider_timeout", "no response"))
     calls: list[str] = field(default_factory=list)
+    served_by: dict[str, str] = field(default_factory=dict)
+    """Model id to report per schema name, standing in for a call that fell back."""
 
     model = "fake-model"
 
@@ -114,7 +116,8 @@ class FakeLLM:
             rows = _evidence_from(user)
             text = self.answer(rows) if callable(self.answer) else self.answer
             data = {"answer": text, "used_all_evidence": True}
-        return LLMResult(data=data, usage=FAKE_USAGE, model=self.model, cost_usd=FAKE_COST)
+        model = self.served_by.get(schema_name, self.model)
+        return LLMResult(data=data, usage=FAKE_USAGE, model=model, cost_usd=FAKE_COST)
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +174,15 @@ class TestAnsweredQuestions:
         assert outcome.cost_usd == pytest.approx(2 * FAKE_COST)
         assert outcome.latency_ms > 0
         assert set(outcome.timings_ms) == STAGES
+        assert outcome.models == ["fake-model", "fake-model"]
+
+    def test_a_call_that_fell_back_says_which_model_answered_it(self, ask: Callable) -> None:
+        """An answer composed on a fallback model is still an answer, but the caller is
+        owed the fact that it was: the figure it reports was produced by a weaker model."""
+        fake = FakeLLM(served_by={ANSWER_SCHEMA_NAME: "fallback-model"})
+        outcome = ask("Where are we losing most against target in Q4?", fake)
+        assert outcome.status == "OK"
+        assert outcome.models == ["fake-model", "fallback-model"]
 
     def test_a_ranking_question_reaches_the_sales_family(self, ask: Callable) -> None:
         outcome = ask(
@@ -198,6 +210,7 @@ class TestFreeRefusals:
         assert (outcome.status, outcome.reason) == ("NO_ANSWER", "blocked_input")
         assert outcome.cost_usd == 0.0
         assert fake.calls == []
+        assert outcome.models == [], "a refusal before the first call names no model"
 
     def test_an_empty_question_is_refused_rather_than_routed(self, ask: Callable) -> None:
         fake = FakeLLM()

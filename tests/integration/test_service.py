@@ -16,6 +16,7 @@ import duckdb
 from fastapi.testclient import TestClient
 import pytest
 
+from acpl_assistant import service
 from acpl_assistant.actions.engine import run_actions
 from acpl_assistant.config import Settings, get_settings
 from acpl_assistant.schemas import ActionItem
@@ -130,6 +131,27 @@ class TestHealthEndpoint:
 
     def test_the_model_is_configuration_not_a_reachability_claim(self, client: TestClient) -> None:
         assert client.get("/health").json()["model"] == Settings().LLM_MODEL
+
+    def test_it_publishes_the_fallback_chain(self, client: TestClient) -> None:
+        """An operator reading a degraded run needs to know what it could have degraded to."""
+        body = client.get("/health").json()
+        assert body["fallback_models"] == list(Settings().llm_model_chain[1:])
+
+    def test_no_model_is_degraded_before_a_provider_call_is_made(self, client: TestClient) -> None:
+        """``degraded_models`` is observation, and a process that has not called out has
+        observed nothing — reporting it must not be what first builds the client."""
+        service.get_client.cache_clear()
+        assert client.get("/health").json()["degraded_models"] == []
+        assert service.get_client.cache_info().currsize == 0
+
+    def test_an_open_breaker_shows_up_as_a_degraded_model(self, client: TestClient) -> None:
+        service.get_client.cache_clear()
+        try:
+            service.get_client()._breaker.record_failure(Settings().LLM_MODEL)
+            service.get_client()._breaker.record_failure(Settings().LLM_MODEL)
+            assert client.get("/health").json()["degraded_models"] == [Settings().LLM_MODEL]
+        finally:
+            service.get_client.cache_clear()
 
 
 class TestPublishedSurface:

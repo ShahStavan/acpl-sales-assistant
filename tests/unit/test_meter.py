@@ -137,5 +137,21 @@ class TestMeter:
             "llm_calls",
             "prompt_tokens",
             "completion_tokens",
+            "models",
         }
         assert snapshot["llm_calls"] == 1
+
+    def test_each_call_records_the_model_that_served_it(self) -> None:
+        """A request whose second call fell back is a request that says so."""
+        meter = Meter()
+        meter.record(result(model="gemini-2.5-flash"))
+        meter.record(result(model="gemini-2.5-flash-lite"))
+        assert meter.models == ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+        assert meter.snapshot()["models"] == ["gemini-2.5-flash", "gemini-2.5-flash-lite"]
+
+    def test_the_snapshot_copies_the_model_list(self) -> None:
+        meter = Meter()
+        meter.record(result())
+        snapshot = meter.snapshot()
+        meter.record(result(model="gemini-3.1-flash-lite"))
+        assert snapshot["models"] == ["gemini-2.5-flash"]

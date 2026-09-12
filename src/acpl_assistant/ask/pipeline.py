@@ -78,6 +78,7 @@ class AskOutcome:
     cost_usd: float = 0.0
     latency_ms: float = 0.0
     timings_ms: dict[str, float] = field(default_factory=dict)
+    models: list[str] = field(default_factory=list)
 
     @property
     def answered(self) -> bool:
@@ -104,6 +105,7 @@ def _refused(
         cost_usd=meter.cost_usd,
         latency_ms=meter.latency_ms,
         timings_ms=dict(meter.timings_ms),
+        models=list(meter.models),
     )
 
 
@@ -203,4 +205,5 @@ def answer_question(
         cost_usd=meter.cost_usd,
         latency_ms=meter.latency_ms,
         timings_ms=dict(meter.timings_ms),
+        models=list(meter.models),
     )

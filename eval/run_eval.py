@@ -18,12 +18,16 @@ Usage::
 
 A full run needs roughly twice as many provider requests as there are cases, which is more
 than Gemini's free daily allowance for gemini-2.5-flash. Point ``LLM_MODEL`` at a model with
-a larger allowance, or use a paid key.
+a larger allowance, use a paid key, or set ``LLM_FALLBACK_MODELS`` so the service steps down
+to a model that still has allowance when the primary runs out. A run that fell back is still
+a valid measurement, but it measures a different system: the summary therefore counts the
+calls each model served, and the published figure should name them.
 """
 
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 from dataclasses import asdict, dataclass, field
 import datetime as dt
 import json
@@ -83,6 +87,9 @@ class CaseResult:
     cost_usd: float = 0.0
     latency_ms: float = 0.0
     evidence_rows: int = 0
+    models: list[str] = field(default_factory=list)
+    """Provider models that served this case's calls, in call order."""
+
     passed: bool = False
     provider_fault: bool = False
     missing: list[str] = field(default_factory=list)
@@ -128,6 +135,7 @@ def grade(case: dict[str, Any], body: dict[str, Any]) -> CaseResult:
         cost_usd=float(body.get("cost_usd", 0.0)),
         latency_ms=float(body.get("latency_ms", 0.0)),
         evidence_rows=len(body.get("evidence") or []),
+        models=[str(m) for m in body.get("models") or []],
     )
 
     # A provider failure the case did not ask for is not evidence about this system.
@@ -194,6 +202,7 @@ def percentile(values: list[float], fraction: float) -> float:
 def summarise(results: list[CaseResult]) -> dict[str, Any]:
     """Accuracy, cost and latency over the cases that actually reached a verdict."""
     graded = [r for r in results if not r.provider_fault]
+    served = Counter(model for r in results for model in r.models)
     passed = [r for r in graded if r.passed]
     latencies = [r.latency_ms for r in graded]
     costs = [r.cost_usd for r in graded]
@@ -212,6 +221,9 @@ def summarise(results: list[CaseResult]) -> dict[str, Any]:
         "total_cost_usd": round(sum(r.cost_usd for r in results), 6),
         "latency_p50_ms": round(percentile(latencies, 0.50), 1),
         "latency_p95_ms": round(percentile(latencies, 0.95), 1),
+        # Provider calls per model. More than one entry means the run degraded part-way
+        # through, and the accuracy above is not a figure about a single model.
+        "calls_by_model": dict(served.most_common()),
         "by_category": {
             name: {**counts, "accuracy": round(counts["passed"] / counts["total"], 4)}
             for name, counts in sorted(by_category.items())
@@ -236,6 +248,12 @@ def report(results: list[CaseResult], summary: dict[str, Any]) -> None:
     print(
         f"latency p50 / p95   {summary['latency_p50_ms']:.0f} ms / {summary['latency_p95_ms']:.0f} ms"
     )
+    served = summary["calls_by_model"]
+    if served:
+        served_text = ", ".join(f"{model} x{count}" for model, count in served.items())
+        print(f"calls by model      {served_text}")
+        if len(served) > 1:
+            print("  (this run fell back: the accuracy above is not one model's)")
     print("\nby category:")
     for name, counts in summary["by_category"].items():
         print(f"  {name:18s} {counts['passed']:>2}/{counts['total']:<2}  {counts['accuracy']:.0%}")

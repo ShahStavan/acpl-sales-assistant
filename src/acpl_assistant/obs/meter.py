@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from acpl_assistant.llm.client import LLMResult
@@ -42,6 +42,10 @@ class Meter:
         self.prompt_tokens: int = 0
         self.completion_tokens: int = 0
         self.calls: int = 0
+        # One entry per provider call, in call order. A request whose router ran on the
+        # primary and whose composer fell back to a second model shows both, because the
+        # answer was produced by both and the reader is owed that.
+        self.models: list[str] = []
 
     # -- timing ------------------------------------------------------------
 
@@ -84,11 +88,12 @@ class Meter:
         :class:`~acpl_assistant.llm.client.LLMResult`; nothing here counts tokens itself.
         """
         self.calls += 1
+        self.models.append(result.model)
         self.prompt_tokens += result.usage.prompt_tokens
         self.completion_tokens += result.usage.billable_output_tokens
         self.cost_usd = round(self.cost_usd + result.cost_usd, 10)
 
-    def snapshot(self) -> dict[str, float | int]:
+    def snapshot(self) -> dict[str, Any]:
         """Return the metered figures as a flat dict, for the request log line."""
         return {
             "cost_usd": self.cost_usd,
@@ -96,4 +101,5 @@ class Meter:
             "llm_calls": self.calls,
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
+            "models": list(self.models),
         }

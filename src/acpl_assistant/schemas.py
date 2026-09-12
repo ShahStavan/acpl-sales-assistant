@@ -104,6 +104,11 @@ class AskResponse(BaseModel):
     latency_ms: float = Field(ge=0.0)
     timings_ms: dict[str, float] = Field(default_factory=dict)
     intent: str | None = None
+    models: list[str] = Field(
+        default_factory=list,
+        description="Provider models that served this request's LLM calls, in call order. "
+        "An entry other than the configured primary means the call fell back.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +122,15 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
     warehouse: str
     model: str
+    fallback_models: list[str] = Field(
+        default_factory=list,
+        description="Models tried after the primary when it is unavailable, in order.",
+    )
+    degraded_models: list[str] = Field(
+        default_factory=list,
+        description="Models whose circuit breaker is open, so calls are currently "
+        "skipping them. Empty on a healthy process.",
+    )
     detail: str | None = None
 
 
