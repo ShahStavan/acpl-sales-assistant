@@ -13,6 +13,15 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 RUN pip install .
 
+# Absolute paths, set BEFORE preparation. Settings derive their defaults from the package's
+# own location, which is site-packages once installed rather than a source checkout, so a
+# relative value resolves against the interpreter's lib directory instead of /app. An
+# absolute value wins that join, and is what makes the data pack and the warehouse both
+# resolve correctly inside the image — at build time and at serve time alike.
+ENV PORT=8000 \
+    ACPL_DATA_DIR=/app/data/fmcg-sales-copilot-ai-engineer-mid-4to6 \
+    ACPL_WAREHOUSE=/app/warehouse.duckdb
+
 # Data pack (read-only input) and the one-command preparation.
 COPY data ./data
 COPY prepare.py ./
@@ -22,8 +31,6 @@ RUN python prepare.py
 RUN useradd --create-home --uid 10001 app && chown -R app:app /app
 USER app
 
-ENV PORT=8000 \
-    ACPL_WAREHOUSE=/app/warehouse.duckdb
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
