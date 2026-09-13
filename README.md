@@ -14,6 +14,8 @@ playbook rule evaluated in code. `POST /actions` calls no model at all.
 | [ARTEFACT.md](ARTEFACT.md) · [ARTEFACT.html](ARTEFACT.html) | Self-audit in measured numbers |
 | [eval/](eval/) | Labelled evaluation set, runner, committed results |
 
+**Live endpoint: https://acpl-sales-assistant.onrender.com** — see [Deploy](#deploy).
+
 ## Status
 
 | Endpoint | State |
@@ -74,6 +76,60 @@ docker run --rm -p 8000:8000 acpl-assistant
 ```
 
 The image prepares the data at build time and runs as a non-root user.
+
+## Deploy
+
+The service is deployed on [Render](https://render.com) as a Docker web service, built from
+the `Dockerfile` in this repository — nothing about the image differs between a local
+`docker run` and the deployed instance.
+
+**Live endpoint: https://acpl-sales-assistant.onrender.com**
+
+```bash
+curl https://acpl-sales-assistant.onrender.com/health
+curl -X POST https://acpl-sales-assistant.onrender.com/actions \
+  -H 'content-type: application/json' -d '{"scope":"all"}'
+curl -X POST https://acpl-sales-assistant.onrender.com/ask \
+  -H 'content-type: application/json' -d '{"question":"Which brands sold the most in South in Q3?"}'
+```
+
+The service was created through Render's REST API against the public GitHub repository, so
+the deployment needs no host config file in the tree and no build-time secret in git.
+
+### Configuration
+
+| Variable | Where it is set | Why |
+|---|---|---|
+| `LLM_API_KEY` | Render environment variable, marked secret | The operator's own provider key. Never in the repository |
+| `LLM_MODEL`, `LLM_FALLBACK_MODELS` | Render environment variable | Not secret; the chain is part of what a reader should be able to check |
+| `ACPL_DATA_DIR`, `ACPL_WAREHOUSE` | `Dockerfile` `ENV`, before `prepare.py` runs | Both absolute. Settings derive their defaults from the package's own location, which is site-packages once installed rather than a source checkout, so a relative value resolves against the interpreter's lib directory. An absolute value wins that join — and it has to be set *before* preparation, or the build writes the warehouse somewhere the running service will not look |
+| `PORT` | **Not set** | Render injects it. The `Dockerfile`'s `CMD` already binds `uvicorn` to `${PORT}`; setting it here would override the injected value and fail the health check |
+
+`CADRA_TOKEN` is **not** deployed. It is the OpenCode build token for the coding assistant;
+the service has no code path that reads it.
+
+The warehouse is built into the image at build time by `prepare.py`, under the same twelve
+gated row-count assertions the local build uses — so a data pack that drifted would fail the
+deploy rather than quietly serve different figures. There is no volume and no runtime write
+path; the service opens the warehouse read-only.
+
+### Cold starts
+
+Render's free instance type stops after roughly 15 minutes without traffic, and the next
+request pays a cold start of up to ~50 seconds while the container restarts. A scheduled
+request against `/health` every 10 minutes keeps it resident, which fits inside the free
+tier's 750 instance-hours per month for a single always-on service.
+
+A cold-started first call is not a fault, and it is not what the latency figures in
+[ARTEFACT.md](ARTEFACT.md) §5 describe — those were measured locally and exclude both the
+network round-trip and any container start.
+
+### Shared quota
+
+The deployed service answers every caller from one free-tier key. The primary model's free
+allowance is 20 requests a day; past that the fallback chain takes over, and answers stay
+correct but are served by a later model, which each response names in its `models` field. A
+reviewer arriving late sees a fallback-served answer, not a failure.
 
 ---
 

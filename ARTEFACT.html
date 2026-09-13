@@ -292,6 +292,25 @@
 </table>
 </div>
 
+<p>
+  Both runs were measured against a local instance &mdash; each result file records its own
+  <code>base_url</code> as <code>http://127.0.0.1:8000</code>. The deployed endpoint runs the
+  same image from the same <code>Dockerfile</code>, and was spot-checked rather than
+  re-measured in full: a second complete run would spend most of the free tier's daily
+  allowance, leaving reviewers' own calls to be served by the fallback chain. The accuracy,
+  cost and latency figures above are therefore local measurements, and the latency figures in
+  particular should be read as the service's own, excluding the network round-trip a reviewer
+  will additionally pay.
+</p>
+
+<p>
+  What was verified against the deployed endpoint: <code>/health</code> reporting <code>ok</code>
+  with the full five-model chain, <code>/actions</code> returning the same 55 actions in the
+  same 30/25 approval split, the four <code>REFUSE-injection</code> cases at 4/4 for no provider
+  calls at all, and <code>Q2-brand-south-q3</code> at 1/1 with its labelled figures intact.
+  Five of the 57 cases, for two provider calls.
+</p>
+
 <h3>The largest gap, and the change it prompted</h3>
 <p>
   Q3 &mdash; period comparison &mdash; failed every one of its five cases, and Q1 two of six.

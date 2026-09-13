@@ -160,6 +160,19 @@ Both runs in full, as committed under `eval/results/`:
 | Latency p50 / p95 | 3391 / 5778 ms | 2901 / 5097 ms |
 | Calls by model | 14 `gemini-2.5-flash`, 70 `gemini-3.1-flash-lite` | 84 `gemini-3.1-flash-lite` |
 
+Both runs were measured against a local instance — each result file records its own
+`base_url` as `http://127.0.0.1:8000`. The deployed endpoint runs the same image from the
+same `Dockerfile`, and was spot-checked rather than re-measured in full: a second complete
+run would spend most of the free tier's daily allowance, leaving reviewers' own calls to be
+served by the fallback chain. The accuracy, cost and latency figures above are therefore
+local measurements, and the latency figures in particular should be read as the service's
+own, excluding the network round-trip a reviewer will additionally pay.
+
+What was verified against the deployed endpoint: `/health` reporting `ok` with the full
+five-model chain, `/actions` returning the same 55 actions in the same 30/25 approval split,
+the four `REFUSE-injection` cases at 4/4 for no provider calls at all, and `Q2-brand-south-q3`
+at 1/1 with its labelled figures intact. Five of the 57 cases, for two provider calls.
+
 ### The largest gap, and the change it prompted
 
 Q3 — period comparison — failed every one of its five cases, and Q1 two of six. All seven were
